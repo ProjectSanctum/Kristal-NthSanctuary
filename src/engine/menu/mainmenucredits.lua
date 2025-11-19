@@ -18,6 +18,35 @@ function MainMenuCredits:init(menu)
 
     self.pages = {
         {
+		"#th Sanctuary",
+            {
+                { "Lead Developers", COLORS.yellow },
+                "Ralszor",
+                "DiamondDeltahedron",
+                "",
+                "",
+                { "Spritework", COLORS.yellow },
+                "Runius",
+                "",
+                "",
+                "",
+                "",
+            },
+            {
+                { "Contributors", COLORS.yellow },
+                "AcousticJamm",
+                "nazareth",
+                "",
+                "",
+                { "Music", COLORS.silver },
+                "DeltaPulsar",
+                "obj_lily",
+                "therealaarami",
+                "",
+                ""
+            },
+		},
+		{
             "Kristal Engine",
             {
                 { "Lead Developers", COLORS.silver },
