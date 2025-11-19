@@ -182,7 +182,7 @@ function Loading:drawBrokenSprite()
 	for _, shard in ipairs(self.ground_shards) do
 		local dt_mult = DT * 30
 		shard.y = shard.y + 4 * dt_mult
-		local frame = self.siner/12
+		local frame = self.siner/6
 		if self.shard_afterimage_timer >= 8 then
 			table.insert(self.ground_shards_afterimage, {frame = frame + shard.frame_add, x = shard.x, y = shard.y, alpha = 1})
 		end
