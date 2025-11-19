@@ -1,8 +1,23 @@
 local Loading = {}
 
 function Loading:init()
-    self.logo = love.graphics.newImage("assets/sprites/kristal/title_logo.png")
-    self.logo_heart = love.graphics.newImage("assets/sprites/kristal/title_logo_heart.png")
+    self.prophecy = love.graphics.newImage("mods/nth-sanctuary/libraries/chapter4lib/assets/sprites/backgrounds/IMAGE_DEPTH_EXTEND_MONO_SEAMLESS_BRIGHTER.png")
+    self.perlin = love.graphics.newImage("mods/nth-sanctuary/libraries/chapter4lib/assets/sprites/backgrounds/perlin_noise_looping.png")
+    self.rune = love.graphics.newImage("mods/nth-sanctuary/assets/sprites/world/events/prophecy/rune.png")
+	self.ground_shard_frames = {}
+	for i = 1, 4 do
+		local frame = love.graphics.newImage("mods/nth-sanctuary/assets/sprites/effects/firework_shine_"..i..".png")
+		table.insert(self.ground_shard_frames, frame)
+	end
+	self.rune_shatter = {}
+	self.ground_shards = {}
+	self.ground_shards_afterimage = {}
+	local rune_pieces = 116
+	for i = 1, rune_pieces do
+		local piece = love.graphics.newImage("assets/sprites/kristal/rune_shatter/rune_piece_"..i..".png")
+		table.insert(self.rune_shatter, {tex = piece, x = SCREEN_WIDTH/2, y = SCREEN_HEIGHT/2, dir = 0, grav = 0, spd = 0})
+	end
+    self.scroll_speed = 2;
 end
 
 ---@enum Loading.States
@@ -20,18 +35,19 @@ function Loading:enter(from, dir)
 
     self.animation_done = false
 
-    self.w = self.logo:getWidth()
-    self.h = self.logo:getHeight()
+    self.w = self.rune:getWidth()
+    self.h = self.rune:getHeight()
 
     if not Kristal.Config["skipIntro"] then
-        self.noise = love.audio.newSource("assets/sounds/kristal_intro.ogg", "static")
-        self.end_noise = love.audio.newSource("assets/sounds/kristal_intro_end.ogg", "static")
-        self.noise:play()
+        self.break1 = love.audio.newSource("assets/sounds/break1.wav", "static")
+        self.end_noise = love.audio.newSource("assets/sounds/nthsanctum_intro_end.ogg", "static")
     else
         self:beginLoad()
     end
 
     self.siner = 0
+    self.prophecy_siner = 0
+    self.shard_afterimage_timer = 0
     self.factor = 1
     self.factor2 = 0
     self.x = (320 / 2) - (self.w / 2)
@@ -107,102 +123,164 @@ function Loading:drawScissor(image, left, top, width, height, x, y, alpha)
     love.graphics.pop()
 end
 
-function Loading:drawSprite(image, x, y, alpha)
+function Loading:drawSprite(x, y)
     love.graphics.push()
-    love.graphics.setScissor()
+    local _cx, _cy = 0, 0
 
-    Draw.setColor(1, 1, 1, alpha)
-    Draw.draw(image, math.floor(x), math.floor(y), 0, 1, 1, image:getWidth() / 2, image:getHeight() / 2)
-    Draw.setColor(1, 1, 1, 1)
+    local surf_textured = Draw.pushCanvas(640, 480);
+    love.graphics.clear(COLORS.white, 0);
+    local xx, yy = -((_cx * 2) + (self.prophecy_siner * 15)) * 0.5, -((_cy * 2) + (self.prophecy_siner * 15)) * 0.5
+	love.graphics.setColor(ColorUtils.hexToRGB("#42D0FFFF"))
+    Draw.drawWrapped(self.prophecy, true, true, xx, yy, 0, 2, 2)
+	love.graphics.setColor(1,1,1,1)
+    local orig_bm, orig_am = love.graphics.getBlendMode()
+    love.graphics.setBlendMode("add", "premultiplied");
+	love.graphics.setColor(ColorUtils.hexToRGB("#42D0FFFF"))
+    Draw.drawWrapped(self.perlin, true, true, xx, yy, 0, 2, 2)
+	love.graphics.setColor(1,1,1,1)
+    love.graphics.setBlendMode(orig_bm, orig_am);
+    Draw.popCanvas()
+
+    love.graphics.stencil(function()
+        local last_shader = love.graphics.getShader()
+        local shader = Kristal.Shaders["Mask"]
+        love.graphics.setShader(shader)
+        local runeox, runeoy = self.rune:getWidth()/2, self.rune:getHeight()/2
+        love.graphics.draw(self.rune, SCREEN_WIDTH/2+x, SCREEN_HEIGHT/2+y, 0, 2, 2, runeox, runeoy)
+        love.graphics.setShader(last_shader)
+    end, "replace", 1)
+    love.graphics.setStencilTest("greater", 0)
+	Draw.setColor(1,1,1,1)
+    Draw.drawCanvas(surf_textured);
+    love.graphics.setStencilTest()
+    love.graphics.pop()
+end
+
+function Loading:drawBrokenSprite()
+    love.graphics.push()
+	for i, piece in ipairs(self.rune_shatter) do
+		local dt_mult = DT * 30
+        local runeox, runeoy = self.rune:getWidth()/2, self.rune:getHeight()/2
+        local speed_x, speed_y = math.cos(piece.dir) * piece.spd, math.sin(piece.dir) * piece.spd
+        local new_speed_x = speed_x + math.cos(math.pi / 2) * (piece.grav * dt_mult)
+        local new_speed_y = speed_y + math.sin(math.pi / 2) * (piece.grav * dt_mult)
+		piece.dir = math.atan2(new_speed_y, new_speed_x)
+        piece.spd = math.sqrt(new_speed_x * new_speed_x + new_speed_y * new_speed_y)
+		piece.x = piece.x + speed_x
+		piece.y = piece.y + speed_y
+		if self.rune_shatter[i] then
+			love.graphics.draw(self.rune_shatter[i].tex, piece.x, piece.y, 0, 2, 2, runeox, runeoy)
+		end
+	end
+	for _, shard in ipairs(self.ground_shards_afterimage) do
+		local dt_mult = DT * 30
+		shard.alpha = shard.alpha - 0.04 * dt_mult
+		love.graphics.setColor(1,1,1,shard.alpha)
+		love.graphics.draw(self.ground_shard_frames[(math.floor(shard.frame) % 4) + 1], shard.x, shard.y, 0, 2, 2, 0, 0)
+		love.graphics.setColor(1,1,1,1)
+	end
+	for _, shard in ipairs(self.ground_shards) do
+		local dt_mult = DT * 30
+		shard.y = shard.y + 4 * dt_mult
+		local frame = self.siner/12
+		if self.shard_afterimage_timer >= 8 then
+			table.insert(self.ground_shards_afterimage, {frame = frame + shard.frame_add, x = shard.x, y = shard.y, alpha = 1})
+		end
+		love.graphics.draw(self.ground_shard_frames[(math.floor(frame + shard.frame_add) % 4) + 1], shard.x, shard.y, 0, 2, 2, 0, 0)
+	end
     love.graphics.pop()
 end
 
 function Loading:draw()
     if Kristal.Config["skipIntro"] then
         love.graphics.push()
-        love.graphics.translate(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
-        love.graphics.scale(2, 2)
-        self:drawSprite(self.logo, 0, 0, 1)
+		local dt_mult = DT * 30
+        self.prophecy_siner = self.prophecy_siner + ((1/15)*self.scroll_speed) * dt_mult
+		local amt = math.sin((self.prophecy_siner / 15) * (2 * math.pi)) * (self.scroll_speed * 6)
+		self:drawSprite(-amt, -amt, 0.5)
+		self:drawSprite(amt, amt, 0.5)
+		love.graphics.setColor(0, 0, 0, 0.7)
+		love.graphics.rectangle("fill", 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
+		love.graphics.setColor(1, 1, 1, 1)
+        self:drawSprite(0, 0)
         love.graphics.pop()
         return
     end
 
-    local dt_mult = DT * 15
+    local dt_mult = DT * 30
 
     -- We need to draw the logo on a canvas
-    local logo_canvas = Draw.pushCanvas(320, 240)
+    local logo_canvas = Draw.pushCanvas(640, 488)
     love.graphics.clear()
 
     if (self.animation_phase == 0) then
         self.siner = self.siner + 1 * dt_mult
-        self.factor = self.factor - (0.003 + (self.siner / 900)) * dt_mult
-        if (self.factor < 0) then
-            self.factor = 0
+        if (self.siner >= 30) then
+            self.siner = 0
             self.animation_phase = 1
             if self.loading_state == Loading.States.WAITING then
                 self:beginLoad()
             end
         end
-        for i = 0, self.h - 1 do
-            self.ia = ((self.siner / 25) - (math.abs((i - (self.h / 2))) * 0.05))
-            self.xoff = ((40 * math.sin(((self.siner / 5) + (i / 3)))) * self.factor)
-            self.xoff2 = ((40 * math.sin((((self.siner / 5) + (i / 3)) + 0.6))) * self.factor)
-            self.xoff3 = ((40 * math.sin((((self.siner / 5) + (i / 3)) + 1.2))) * self.factor)
-            self:drawScissor(self.logo, 0, i, self.w, 2, (self.x + self.xoff), (self.y + i), ((1 - self.factor) / 2))
-            self:drawScissor(self.logo, 0, i, self.w, 2, (self.x + self.xoff2), (self.y + i), ((1 - self.factor) / 2))
-            self:drawScissor(self.logo, 0, i, self.w, 2, (self.x + self.xoff3), (self.y + i), ((1 - self.factor) / 2))
-        end
     end
     if (self.animation_phase == 1) then
-        self:drawSprite(self.logo, self.x + (self.w / 2), self.y + (self.h / 2), self.logo_alpha)
-        self.animation_phase_timer = self.animation_phase_timer + 1 * dt_mult
-        if (self.animation_phase_timer >= 30) and (self.loading_state == Loading.States.DONE) then
+        self.siner = self.siner + 1 * dt_mult
+        self.prophecy_siner = self.prophecy_siner + ((1/15)*self.scroll_speed) * dt_mult
+		local amt = math.sin((self.prophecy_siner / 15) * (2 * math.pi)) * (self.scroll_speed * 6)
+		self:drawSprite(-amt, -amt, 0.5)
+		self:drawSprite(amt, amt, 0.5)
+		love.graphics.setColor(0, 0, 0, 0.7)
+		love.graphics.rectangle("fill", 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
+		love.graphics.setColor(1, 1, 1, 1)
+        self:drawSprite(0, 0)
+        if (self.loading_state == Loading.States.DONE) then
             self.siner = 0
-            self.factor = 0
             self.animation_phase = 2
-            self.end_noise:play()
         end
     end
     if (self.animation_phase == 2) then
-        if (self.animation_phase_plus == 0) then
-            self.siner = self.siner + 0.5 * dt_mult
-        end
+        self.siner = self.siner + 1 * dt_mult
+        self.prophecy_siner = self.prophecy_siner + ((1/15)*self.scroll_speed) * dt_mult
+		if self.siner <= 67 then
+			self.scroll_speed = MathUtils.lerp(self.scroll_speed, 0, (1/26)*dt_mult)
+			local amt = math.sin((self.prophecy_siner / 15) * (2 * math.pi)) * (self.scroll_speed * 6)
+			self:drawSprite(-amt, -amt)
+			self:drawSprite(amt, amt)
+			love.graphics.setColor(0, 0, 0, 0.7)
+			love.graphics.rectangle("fill", 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
+			love.graphics.setColor(1, 1, 1, 1)
+			self:drawSprite(0, 0)
+		else
+            self.siner = 0
+			self.break1:play()
+            self.animation_phase = 3
+		end
+    end
+    if (self.animation_phase == 3) then
+        self.siner = self.siner + 1 * dt_mult
+		self:drawBrokenSprite()
         if (self.siner >= 20) then
-            self.animation_phase_plus = 1
+            self.siner = 0
+			for _, piece in ipairs(self.rune_shatter) do
+				piece.dir = math.rad(MathUtils.random(360))
+				piece.grav = 0.4 + MathUtils.random(0.12)
+				piece.spd = 4
+			end
+			for i = 1,15 do
+				table.insert(self.ground_shards, {frame_add = MathUtils.randomInt(0, 3), x = SCREEN_WIDTH/2 - 199 + (((i-1) * 398) / 15) + MathUtils.random(-30, 30), y = SCREEN_HEIGHT/2 + MathUtils.random(60)})
+			end
+			self.end_noise:play()
+            self.animation_phase = 4
         end
-        if (self.animation_phase_plus == 1) then
-            self.siner = self.siner + 0.5 * dt_mult
-            self.logo_alpha = self.logo_alpha - 0.02 * dt_mult
-            self.logo_alpha_2 = self.logo_alpha_2 - 0.08 * dt_mult
-        end
-
-        self:drawSprite(self.logo, self.x + (self.w / 2), self.y + (self.h / 2), self.logo_alpha_2)
-        self.mina = (self.siner / 30)
-        if (self.mina >= 0.14) then
-            self.mina = 0.14
-        end
-
-        self.factor2 = self.factor2 + 0.05 * dt_mult
-
-        local angle_offset = (self.siner / 8)
-        local alpha = (self.mina * self.logo_alpha)
-
-        local center_x = self.x + (self.w / 2)
-        local center_y = self.y + (self.h / 2)
-
-        for i = 0, 9 do
-            local angle = angle_offset + (i / 2)
-            local offset = i * self.factor2
-            local x_offset = math.sin(angle) * offset
-            local y_offset = math.cos(angle) * offset
-
-            self:drawSprite(self.logo, center_x - x_offset, center_y - y_offset, alpha)
-            self:drawSprite(self.logo, center_x + x_offset, center_y - y_offset, alpha)
-            self:drawSprite(self.logo, center_x - x_offset, center_y + y_offset, alpha)
-            self:drawSprite(self.logo, center_x + x_offset, center_y + y_offset, alpha)
-        end
-        self:drawSprite(self.logo_heart, self.x + (self.w / 2), self.y + (self.h / 2), self.logo_alpha)
-        if (self.logo_alpha <= -0.5 and self.skipped == false) then
+    end
+    if (self.animation_phase == 4) then
+        self.siner = self.siner + 1 * dt_mult
+		self.shard_afterimage_timer = self.shard_afterimage_timer + 1 * dt_mult
+		self:drawBrokenSprite()
+		if self.shard_afterimage_timer >= 8 then
+			self.shard_afterimage_timer = 0
+		end
+        if (self.siner >= 120 and self.skipped == false) then
             self.animation_done = true
         end
     end
@@ -212,7 +290,7 @@ function Loading:draw()
 
     -- Draw the canvas on the screen scaled by 2x
     Draw.setColor(1, 1, 1, 1)
-    Draw.draw(logo_canvas, 0, 0, 0, 2, 2)
+    Draw.draw(logo_canvas, 0, 0, 0, 1, 1)
 
     if self.skipped then
         -- Draw the screen fade
@@ -221,13 +299,13 @@ function Loading:draw()
 
         if self.fader_alpha > 1 then
             self.animation_done = true
-            self.noise:stop()
+            self.break1:stop()
             self.end_noise:stop()
         end
 
         -- Change the fade opacity for the next frame
         self.fader_alpha = math.max(0, self.fader_alpha + (0.04 * dt_mult))
-        self.noise:setVolume(math.max(0, 1 - self.fader_alpha))
+        self.break1:setVolume(math.max(0, 1 - self.fader_alpha))
         self.end_noise:setVolume(math.max(0, 1 - self.fader_alpha))
     end
 
