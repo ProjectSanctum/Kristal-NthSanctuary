@@ -176,7 +176,7 @@ function Loading:drawBrokenSprite()
 		local dt_mult = DT * 30
 		shard.alpha = shard.alpha - 0.04 * dt_mult
 		love.graphics.setColor(1,1,1,shard.alpha)
-		love.graphics.draw(self.ground_shard_frames[(math.floor(shard.frame) % 4) + 1], shard.x, shard.y, 0, 2, 2, 0, 0)
+		love.graphics.draw(self.ground_shard_frames[(math.floor(shard.frame) % 4) + 1], shard.x, shard.y, 0, 1, 1, 2, 2)
 		love.graphics.setColor(1,1,1,1)
 	end
 	for _, shard in ipairs(self.ground_shards) do
@@ -186,7 +186,7 @@ function Loading:drawBrokenSprite()
 		if self.shard_afterimage_timer >= 8 then
 			table.insert(self.ground_shards_afterimage, {frame = frame + shard.frame_add, x = shard.x, y = shard.y, alpha = 1})
 		end
-		love.graphics.draw(self.ground_shard_frames[(math.floor(frame + shard.frame_add) % 4) + 1], shard.x, shard.y, 0, 2, 2, 0, 0)
+		love.graphics.draw(self.ground_shard_frames[(math.floor(frame + shard.frame_add) % 4) + 1], shard.x, shard.y, 0, 2, 2, 2, 2)
 	end
     love.graphics.pop()
 end
