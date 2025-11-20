@@ -288,7 +288,14 @@ function Loading:draw()
 				piece.spd = 4
 			end
 			for i = 1,15 do
-				table.insert(self.ground_shards, {frame_add = MathUtils.randomInt(0, 3), x = SCREEN_WIDTH/2 - 199 + (((i-1) * 398) / 15) + MathUtils.random(-30, 30), y = SCREEN_HEIGHT/2 + MathUtils.random(60)})
+				local width = 120
+				table.insert(self.ground_shards, {frame_add = MathUtils.randomInt(0, 3), x = SCREEN_WIDTH/2 - width + (((i-1) * width*2) / 15) + MathUtils.random(-30, 30), y = SCREEN_HEIGHT/2 + MathUtils.random(70)})
+				if i == 1 then
+					self.ground_shards[i].x = SCREEN_WIDTH/2 - width
+				end
+				if i == 15 then
+					self.ground_shards[i].x = SCREEN_WIDTH/2 + width
+				end
 			end
 			self.end_noise:play()
             self.animation_phase = 4
