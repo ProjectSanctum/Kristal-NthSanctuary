@@ -123,24 +123,45 @@ function Loading:drawScissor(image, left, top, width, height, x, y, alpha)
     love.graphics.pop()
 end
 
+function Loading:oldHexToRgb(hex, value)
+    local color = ColorUtils.hexToRGB(hex)
+    return {
+        color[1],
+        color[2],
+        color[3],
+        color[4] * (value or 1),
+    }
+end
+
+function Loading:scr_wave(arg0, arg1, speed_seconds, phase)
+    local a4 = (arg1 - arg0) * 0.5;
+    return arg0 + a4 + (math.sin((((Kristal.getTime()) + (speed_seconds * phase)) / speed_seconds) * (2 * math.pi)) * a4);
+end
+
 function Loading:drawSprite(x, y)
     love.graphics.push()
     local _cx, _cy = 0, 0
 
     local surf_textured = Draw.pushCanvas(640, 480);
     love.graphics.clear(COLORS.white, 0);
+    love.graphics.setColorMask(true, true, true, false);
+    local pnl_canvas = Draw.pushCanvas(self.perlin:getDimensions())
+	love.graphics.setColor(self:oldHexToRgb("#42D0FF", 1 or self:scr_wave(0.4, 0.4, 4, 0)))
+    Draw.drawWrapped(self.perlin, true, true, 0, 0, 0, 1, 1)
+    Draw.popCanvas(true)
     local xx, yy = -((_cx * 2) + (self.prophecy_siner * 15)) * 0.5, -((_cy * 2) + (self.prophecy_siner * 15)) * 0.5
-	love.graphics.setColor(ColorUtils.hexToRGB("#42D0FFFF"))
+	love.graphics.setColor(ColorUtils.hexToRGB("#42D0FF", 1))
     Draw.drawWrapped(self.prophecy, true, true, xx, yy, 0, 2, 2)
 	love.graphics.setColor(1,1,1,1)
     local orig_bm, orig_am = love.graphics.getBlendMode()
+	love.graphics.setColor(self:oldHexToRgb("#42D0FF", 1 or self:scr_wave(0.4, 0.4, 4, 0)))
     love.graphics.setBlendMode("add");
-	love.graphics.setColor(ColorUtils.hexToRGB("#42D0FFFF"))
-    Draw.drawWrapped(self.perlin, true, true, xx, yy, 0, 2, 2)
+    Draw.drawWrapped(pnl_canvas, true, true, xx, yy, 0, 2, 2)
 	love.graphics.setColor(1,1,1,1)
     love.graphics.setBlendMode(orig_bm, orig_am);
     Draw.popCanvas()
-
+    love.graphics.setColorMask(true, true, true, true);
+	
     love.graphics.stencil(function()
         local last_shader = love.graphics.getShader()
         local shader = Kristal.Shaders["Mask"]
