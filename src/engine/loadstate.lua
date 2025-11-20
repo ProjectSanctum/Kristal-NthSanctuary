@@ -144,18 +144,17 @@ function Loading:drawSprite(x, y)
 
     local surf_textured = Draw.pushCanvas(640, 480);
     love.graphics.clear(COLORS.white, 0);
-    love.graphics.setColorMask(true, true, true, false);
     local pnl_canvas = Draw.pushCanvas(self.perlin:getDimensions())
-	love.graphics.setColor(self:oldHexToRgb("#42D0FF", 1 or self:scr_wave(0.4, 0.4, 4, 0)))
+	love.graphics.setColor(self:oldHexToRgb("#42D0FF", self:scr_wave(0, 0.4, 4, 0)))
     Draw.drawWrapped(self.perlin, true, true, 0, 0, 0, 1, 1)
     Draw.popCanvas(true)
+    love.graphics.setColorMask(true, true, true, false);
     local xx, yy = -((_cx * 2) + (self.prophecy_siner * 15)) * 0.5, -((_cy * 2) + (self.prophecy_siner * 15)) * 0.5
 	love.graphics.setColor(ColorUtils.hexToRGB("#42D0FF", 1))
     Draw.drawWrapped(self.prophecy, true, true, xx, yy, 0, 2, 2)
 	love.graphics.setColor(1,1,1,1)
     local orig_bm, orig_am = love.graphics.getBlendMode()
-	love.graphics.setColor(self:oldHexToRgb("#42D0FF", 1 or self:scr_wave(0.4, 0.4, 4, 0)))
-    love.graphics.setBlendMode("add");
+    love.graphics.setBlendMode("add", "premultiplied");
     Draw.drawWrapped(pnl_canvas, true, true, xx, yy, 0, 2, 2)
 	love.graphics.setColor(1,1,1,1)
     love.graphics.setBlendMode(orig_bm, orig_am);

@@ -165,32 +165,33 @@ function MainMenuTitle:draw()
 		local last_color = love.graphics.getColor()
 		local surf_textured = Draw.pushCanvas(640, 480);
 		love.graphics.clear(COLORS.white, 0);
-		love.graphics.setColorMask(true, true, true, false);
 		local pnl_tex = self.perlin
 		local pnl_canvas = Draw.pushCanvas(pnl_tex:getDimensions())
-		draw_sprite_tiled_ext(pnl_tex, 0, 0, 0, 1, 1, oldHexToRgb("#42D0FF", 1 or scr_wave(0.4, 0.4, 4, 0)))
+		draw_sprite_tiled_ext(pnl_tex, 0, 0, 0, 1, 1, oldHexToRgb("#42D0FF", scr_wave(0, 0.4, 4, 0)))
 		Draw.popCanvas(true)
+		love.graphics.setColorMask(true, true, true, false);
 		local x, y = -((_cx * 2) + ((Kristal.getTime()) * 30)) * 0.5, -((_cy * 2) + ((Kristal.getTime()) * 30)) * 0.5
 		draw_sprite_tiled_ext(self.prophecy, 0, x, y, 2, 2, oldHexToRgb("#42D0FF", 1));
 		local orig_bm, orig_am = love.graphics.getBlendMode()
-		love.graphics.setBlendMode("add");
-		draw_sprite_tiled_ext(pnl_canvas, 0, x, y, 2, 2, oldHexToRgb("#42D0FF", 1 or scr_wave(0.4, 0.4, 4, 0)));
+		love.graphics.setBlendMode("add", "premultiplied");
+		draw_sprite_tiled_ext(pnl_canvas, 0, x, y, 2, 2, COLORS.white);
 		love.graphics.setBlendMode(orig_bm, orig_am);
+		love.graphics.setColorMask(true, true, true, true);
+		Draw.popCanvas(true)
+		
 		local surf_textured_alt = Draw.pushCanvas(640, 480);
 		love.graphics.clear(oldHexToRgb("#42D0FF", 1), 0);
-		love.graphics.setColorMask(true, true, true, false);
 		local pnl_tex = self.perlin
-		local pnl_canvas = Draw.pushCanvas(pnl_tex:getDimensions())
-		draw_sprite_tiled_ext(pnl_tex, 0, 0, 0, 1, 1, oldHexToRgb("#42D0FF", 1 or scr_wave(0.4, 0.4, 4, 0)))
+		local pnl_canvas_2 = Draw.pushCanvas(pnl_tex:getDimensions())
+		draw_sprite_tiled_ext(pnl_tex, 0, 0, 0, 1, 1, oldHexToRgb("#42D0FF", scr_wave(0, 0.4, 4, 0)))
 		Draw.popCanvas(true)
 		local x, y = -((_cx * 2) + ((Kristal.getTime()) * 30)) * 0.5, -((_cy * 2) + ((Kristal.getTime()) * 30)) * 0.5
 		draw_sprite_tiled_ext(self.prophecy_alt, 0, x, y, 2, 2, oldHexToRgb("#FFFFFF", 0.6));
 		local orig_bm, orig_am = love.graphics.getBlendMode()
 		love.graphics.setBlendMode("add", "premultiplied");
-		draw_sprite_tiled_ext(pnl_canvas, 0, x, y, 2, 2, oldHexToRgb("#42D0FF", 1 or scr_wave(0.4, 0.4, 4, 0)));
+		draw_sprite_tiled_ext(pnl_canvas_2, 0, x, y, 2, 2, COLORS.white)
 		love.graphics.setBlendMode(orig_bm, orig_am);
-		Draw.popCanvas()
-		Draw.popCanvas()
+		Draw.popCanvas(true)
 
 		local float = math.sin(Kristal.getTime() * 1) * 10
 		love.graphics.stencil(function()
@@ -253,7 +254,9 @@ function MainMenuTitle:draw()
 		end, "replace", 1)
 		love.graphics.setStencilTest("greater", 0)
 		Draw.setColor(1,1,1,1)
+		love.graphics.setBlendMode("add");
 		Draw.drawCanvas(surf_textured_alt)
+		love.graphics.setBlendMode("alpha");
 		love.graphics.setStencilTest()
 	end
     --Draw.draw(self.selected_mod and self.selected_mod.logo or self.logo, 160, 70)
