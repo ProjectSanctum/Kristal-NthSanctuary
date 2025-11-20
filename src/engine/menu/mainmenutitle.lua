@@ -173,7 +173,7 @@ function MainMenuTitle:draw()
 		local x, y = -((_cx * 2) + ((Kristal.getTime()) * 30)) * 0.5, -((_cy * 2) + ((Kristal.getTime()) * 30)) * 0.5
 		draw_sprite_tiled_ext(self.prophecy, 0, x, y, 2, 2, oldHexToRgb("#42D0FF", 1));
 		local orig_bm, orig_am = love.graphics.getBlendMode()
-		love.graphics.setBlendMode("add", "premultiplied");
+		love.graphics.setBlendMode("add");
 		draw_sprite_tiled_ext(pnl_canvas, 0, x, y, 2, 2, oldHexToRgb("#42D0FF", 1 or scr_wave(0.4, 0.4, 4, 0)));
 		love.graphics.setBlendMode(orig_bm, orig_am);
 		local surf_textured_alt = Draw.pushCanvas(640, 480);
@@ -201,8 +201,9 @@ function MainMenuTitle:draw()
 			love.graphics.setShader(last_shader)
 		end, "replace", 1)
 		love.graphics.setStencilTest("greater", 0)
-		Draw.setColor(1,1,1,1)
+		Draw.setColor(1,1,1,0.7)
 		Draw.drawCanvas(surf_textured)
+		Draw.setColor(1,1,1,1)
 		love.graphics.setStencilTest()
 		
 		Draw.draw(self.logo_grad, SCREEN_WIDTH/2 - self.logo:getWidth(), 105 - self.logo:getHeight() + float, 0, 2, 2)
