@@ -43,7 +43,7 @@ function MainMenuCredits:init(menu)
                 "obj_lily",
                 "therealaarami",
                 "squibles",
-                ""
+                "AkitA"
             }
         },
         {
