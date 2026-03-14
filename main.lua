@@ -1,5 +1,3 @@
-require("src.engine.tweaks")
-
 require("src.engine.vars")
 require("src.engine.statevars")
 require("src.engine.vendcust")
@@ -179,6 +177,8 @@ LightItemMenu = require("src.engine.game.world.ui.light.lightitemmenu")
 LightStatMenu = require("src.engine.game.world.ui.light.lightstatmenu")
 LightCellMenu = require("src.engine.game.world.ui.light.lightcellmenu")
 
+EventRegistry = require("src.engine.game.world.eventregistry")
+
 Event = require("src.engine.game.world.event")
 Script = require("src.engine.game.world.events.script")
 Interactable = require("src.engine.game.world.events.interactable")
@@ -223,6 +223,8 @@ ArenaSprite = require("src.engine.game.battle.arenasprite")
 ArenaMask = require("src.engine.game.battle.arenamask")
 SnowGraveSpell = require("src.engine.game.battle.snowgravespell")
 
+BattleBackground = require("src.engine.game.battle.ui.battlebackground")
+BattleDarkener = require("src.engine.game.battle.ui.battledarkener")
 BattleUI = require("src.engine.game.battle.ui.battleui")
 ActionBox = require("src.engine.game.battle.ui.actionbox")
 ActionBoxDisplay = require("src.engine.game.battle.ui.actionboxdisplay")
@@ -400,7 +402,7 @@ function love.run()
     end
 
     -- Main loop time.
-    return function ()
+    return function()
         if error_result then
             local result = error_result()
             if result then

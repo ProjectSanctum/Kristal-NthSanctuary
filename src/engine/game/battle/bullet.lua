@@ -42,7 +42,7 @@ function Bullet:init(x, y, texture)
     end
 
     -- Default collider to half this object's size
-    self.collider = Hitbox(self, self.width/4, self.height/4, self.width/2, self.height/2)
+    self.collider = Hitbox(self, self.width / 4, self.height / 4, self.width / 2, self.height / 2)
 
     -- TP added when you graze this bullet (Also given each frame after the first graze, 30x less at 30FPS)
     self.tp = nil
@@ -96,6 +96,12 @@ function Bullet:shouldSwoon(damage, target, soul)
     return false
 end
 
+--- Get the invulnerability time that will be applied to the soul upon this bullet hitting it.
+---@return number
+function Bullet:getInvulnTime()
+    return self.inv_timer
+end
+
 --- *(Override)* Called when the bullet hits the player's soul without invulnerability frames. \
 --- Not calling `super.onDamage()` here will stop the normal damage logic from occurring.
 ---@param soul Soul
@@ -105,7 +111,7 @@ function Bullet:onDamage(soul)
     if damage > 0 then
         local target = self:getTarget()
         local battlers = Game.battle:hurt(damage, false, target, self:shouldSwoon(damage, target, soul))
-        soul.inv_timer = self.inv_timer
+        soul.inv_timer = self:getInvulnTime()
         soul:onDamage(self, damage)
         return battlers
     end

@@ -152,6 +152,22 @@ function World:heal(target, amount, text)
     end
 end
 
+--- Gets the `Player` and `Follower` characters
+---@return T
+function World:getPlayerAndFollowers()
+    local characters = TableUtils.copy(self.followers)
+    if self.player then
+        table.insert(characters, 1, self.player)
+    end
+    return characters
+end
+
+--- Gets the `Follower` or `Player` of a character that's currently the soul party member
+---@return Player|Follower?
+function World:getSoulPartyCharacter()
+    return self:getPartyCharacterInParty(Game:getSoulPartyMember())
+end
+
 --- Hurts the party member `battler` by `amount`, or hurts the whole party for `amount`
 ---@overload fun(self: World, amount: number)
 ---@param battler   Character|string    The Character to hurt
@@ -384,7 +400,7 @@ function World:onKeyPressed(key)
             Game.world:hurtParty(math.huge)
         end
         if key == "k" then
-            Game:setTension(Game:getMaxTension() * 2, true)
+            Game:setTension(Game:getMaxTension())
         end
         if key == "n" then
             NOCLIP = not NOCLIP
