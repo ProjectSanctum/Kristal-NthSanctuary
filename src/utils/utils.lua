@@ -898,6 +898,7 @@ end
 ---@param amount number          # A percentage (from 0 to 1) that determines how much of the second color to merge into the first.
 ---@return number[] result_color # A new table of RGBA values.
 ---
+---@deprecated Use `ColorUtils.mergeColor` instead
 function Utils.mergeColor(start_color, end_color, amount)
     return ColorUtils.mergeColor(start_color, end_color, amount)
 end
@@ -1091,8 +1092,9 @@ end
 ---@return number b # The blue value of the color.
 ---@return number a # The alpha value of the color, or 1 if it was not specified.
 ---
+---@deprecated Use `ColorUtils.unpackColor` instead
 function Utils.unpackColor(color)
-    return color[1], color[2], color[3], color[4] or 1
+    return ColorUtils.unpackColor(color)
 end
 
 ---
