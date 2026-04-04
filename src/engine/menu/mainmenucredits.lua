@@ -17,39 +17,64 @@ function MainMenuCredits:init(menu)
     self.menu = menu
 
     self.pages = {
-        {
+    self.pages = {        {
             "#th Sanctuary",
             {
                 { "Lead Developers", COLORS.yellow },
                 "Ralszor",
                 "DiamondDeltahedron",
-                "",
-                "",
-                { "Spritework", COLORS.yellow },
-                "Runius",
-                "Hyperboid",
+                "TheLucidLibrarian",
+                "Mason",
+                "Funkin's Garbage",
+                { "Storywriting", COLORS.yellow },
+                "KayCelestia",
                 "",
                 "",
                 "",
             },
             {
                 { "Contributors", COLORS.yellow },
-                "AcousticJamm",
-                "nazareth",
+                "Hyperboid",
                 "JARU",
+                "Leaff",
                 "",
                 { "Music", COLORS.yellow },
                 "DeltaPulsar",
-                "obj_lily",
-                "therealaarami",
                 "squibles",
-                "AkitA"
             }
         },
         {
             "#th Sanctuary",
             {
-                { "Assets", COLORS.yellow },
+                { "Spritework", COLORS.yellow },
+                "Runius",
+                "Hyperboid",
+                "Krisp / Tamato",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+            },
+            {
+                { "Borrowed Music", COLORS.yellow },
+                "obj_lily",
+                "therealaarami",
+                "AkitA",
+                "Rareblin",
+                "Lucas Pucas",
+                "",
+                "",
+                "",
+                "",
+            }
+        },
+        {
+            "#th Sanctuary",
+            {
+                { "Extra Assets", COLORS.yellow },
                 "DELTARUNE Team",
                 "Toby Fox",
                 "Temmie Chang",

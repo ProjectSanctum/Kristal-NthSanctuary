@@ -3,7 +3,7 @@ local Loading = {}
 function Loading:init()
     self.prophecy = love.graphics.newImage("mods/nth-sanctuary/libraries/chapter4lib/assets/sprites/backgrounds/IMAGE_DEPTH_EXTEND_MONO_SEAMLESS_BRIGHTER.png")
     self.perlin = love.graphics.newImage("mods/nth-sanctuary/libraries/chapter4lib/assets/sprites/backgrounds/perlin_noise_looping.png")
-    self.rune = love.graphics.newImage("mods/nth-sanctuary/assets/sprites/world/events/prophecy/rune.png")
+    self.rune = love.graphics.newImage("assets/sprites/kristal/rune_old.png")
 	self.ground_shard_frames = {}
 	for i = 1, 4 do
 		local frame = love.graphics.newImage("mods/nth-sanctuary/assets/sprites/effects/firework_shine_"..i..".png")

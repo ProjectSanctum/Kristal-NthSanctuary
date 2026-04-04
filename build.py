@@ -8,8 +8,8 @@ from pe_tools import parse_pe, IMAGE_DIRECTORY_ENTRY_RESOURCE
 from pe_tools.rsrc import parse_pe_resources, pe_resources_prepack, parse_prelink_resources, KnownResourceTypes
 from pe_tools.version_info import parse_version_info, VersionInfo
 
-ver_str = "0.3.1"
-windows_ver = "0, 3, 1, 0"
+ver_str = "0.4"
+windows_ver = "0, 4, 0, 0"
 file_description = "Deltarune B3313!"
 
 # Contains code from https://github.com/avast/pe_tools/blob/master/pe_tools/peresed.py
