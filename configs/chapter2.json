@@ -21,6 +21,8 @@
     "oldDualHealFormula": false,     // Old Dual Heal amount calculation
 
     "speechBubble": "cyber",         // Default enemy speech bubble style
+    "lightTextboxStyle": "light",    // Textbox style used in the light world (by default)
+    "darkTextboxStyle": "dark_old",  // Textbox style used in the dark world (by default)
 
     "enemyAuras": true,              // Red glow around overworld enemies
 
@@ -53,5 +55,8 @@
     "newShopSpaceUI": false,         // Whether shops use the newer space display with both inventory and storage space
     "shopSpaceUIFont": "8bit",       // The font used for the shop space UI's numbers
 
-    "healthConversion": true         // Whether to (properly) convert health when switching between light and dark worlds.
+    "healthConversion": true,        // Whether to (properly) convert health when switching between light and dark worlds.
+    "defaultInvulnTime": 40,         // The default length of invulnerability given to the player when hit by a bullet, in frames. (30 frames = 1 second)
+    "newChoicers": false,            // Whether to use the new choicer style or not
+    "newSpellCostCalculation": false // Whether to use the new spell cost calculation or not
 }

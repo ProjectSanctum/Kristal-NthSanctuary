@@ -4,8 +4,16 @@ require("src.engine.vendcust")
 
 DiscordRPC = require("src.lib.discordrpc")
 
----@diagnostic disable-next-line: lowercase-global
-https = require("src.lib.https")
+local major, _, _, _ = love.getVersion()
+
+if major >= 12 then
+    ---@diagnostic disable-next-line: lowercase-global
+    https = require("https")
+    HTTPS_AVAILABLE = true
+else
+    ---@diagnostic disable-next-line: lowercase-global, different-requires
+    https = require("src.lib.https")
+end
 
 ---@diagnostic disable-next-line: lowercase-global
 utf8 = require("utf8")
@@ -28,11 +36,13 @@ TableUtils = require("src.utils.tableutils")
 ClassUtils = require("src.utils.classutils")
 TiledUtils = require("src.utils.tiledutils")
 FileSystemUtils = require("src.utils.filesystemutils")
+CollisionUtils = require("src.utils.collisionutils")
+ShapeUtils = require("src.utils.shapeutils")
 HookSystem = require("src.utils.hooksystem")
 Utils = require("src.utils.utils")
 
 GitFinder = require("src.utils.gitfinder")
-CollisionUtil = require("src.utils.collision")
+CollisionUtil = require("src.utils.collision") -- TODO: Rename ??????? Why did i do this
 Draw = require("src.utils.draw")
 
 Kristal = require("src.kristal")
@@ -73,6 +83,7 @@ GonerKeyboard = require("src.engine.objects.gonerkeyboard")
 MainMenuTitle = require("src.engine.menu.mainmenutitle")
 MainMenuOptions = require("src.engine.menu.mainmenuoptions")
 MainMenuCredits = require("src.engine.menu.mainmenucredits")
+MainMenuAbout = require("src.engine.menu.mainmenuabout")
 MainMenuModList = require("src.engine.menu.mainmenumodlist")
 MainMenuModCreate = require("src.engine.menu.mainmenumodcreate")
 MainMenuModConfig = require("src.engine.menu.mainmenumodconfig")
@@ -107,6 +118,8 @@ FountainShadowFX = require("src.engine.drawfx.fountainshadowfx")
 GradientFX = require("src.engine.drawfx.gradientfx")
 ScissorFX = require("src.engine.drawfx.scissorfx")
 
+CollisionRegistry = require("src.engine.colliders.collisionregistry")
+KristalCollisions = require("src.engine.colliders.kristalcollisions")
 Collider = require("src.engine.colliders.collider")
 ColliderGroup = require("src.engine.colliders.collidergroup")
 Hitbox = require("src.engine.colliders.hitbox")
@@ -152,10 +165,18 @@ Tileset = require("src.engine.game.world.tileset")
 TileLayer = require("src.engine.game.world.tilelayer")
 Character = require("src.engine.game.world.character")
 Follower = require("src.engine.game.world.follower")
+
 Player = require("src.engine.game.world.player")
+PlayerClimbState = require("src.engine.game.world.playerclimbstate")
+PlayerSlideBaseState = require("src.engine.game.world.playerslidebasestate")
+PlayerSlideState = require("src.engine.game.world.playerslidestate")
+PlayerSlideLockState = require("src.engine.game.world.playerslidelockstate")
+PlayerSlideFreeState = require("src.engine.game.world.playerslidefreestate")
+
 OverworldSoul = require("src.engine.game.world.overworldsoul")
 WorldBullet = require("src.engine.game.world.worldbullet")
 ChaserEnemy = require("src.engine.game.world.chaserenemy")
+ClimbEnemy = require("src.engine.game.world.climbenemy")
 
 SaveMenu = require("src.engine.game.world.ui.savemenu")
 SimpleSaveMenu = require("src.engine.game.world.ui.simplesavemenu")
@@ -169,9 +190,23 @@ DarkMenu = require("src.engine.game.world.ui.dark.darkmenu")
 DarkItemMenu = require("src.engine.game.world.ui.dark.darkitemmenu")
 DarkEquipMenu = require("src.engine.game.world.ui.dark.darkequipmenu")
 DarkPowerMenu = require("src.engine.game.world.ui.dark.darkpowermenu")
-DarkConfigMenu = require("src.engine.game.world.ui.dark.darkconfigmenu")
 DarkMenuPartySelect = require("src.engine.game.world.ui.dark.darkmenupartyselect")
 DarkStorageMenu = require("src.engine.game.world.ui.dark.darkstoragemenu")
+
+-- Config menu
+
+-- States
+DarkConfigVolumeState = require("src.engine.game.world.ui.dark.config.darkconfigvolumestate")
+DarkConfigBorderState = require("src.engine.game.world.ui.dark.config.darkconfigborderstate")
+DarkConfigRebindState = require("src.engine.game.world.ui.dark.config.darkconfigrebindstate")
+
+-- Options
+DarkConfigOption = require("src.engine.game.world.ui.dark.config.options.darkconfigoption")
+DarkConfigBooleanOption = require("src.engine.game.world.ui.dark.config.options.darkconfigbooleanoption")
+DarkConfigVolumeOption = require("src.engine.game.world.ui.dark.config.options.darkconfigvolumeoption")
+DarkConfigBorderOption = require("src.engine.game.world.ui.dark.config.options.darkconfigborderoption")
+
+DarkConfigMenu = require("src.engine.game.world.ui.dark.darkconfigmenu")
 
 LightMenu = require("src.engine.game.world.ui.light.lightmenu")
 LightItemMenu = require("src.engine.game.world.ui.light.lightitemmenu")
@@ -179,6 +214,8 @@ LightStatMenu = require("src.engine.game.world.ui.light.lightstatmenu")
 LightCellMenu = require("src.engine.game.world.ui.light.lightcellmenu")
 
 EventRegistry = require("src.engine.game.world.eventregistry")
+
+-- Events
 
 Event = require("src.engine.game.world.event")
 Script = require("src.engine.game.world.events.script")
@@ -205,6 +242,13 @@ DarkFountain = require("src.engine.game.world.events.darkfountain")
 FountainFloor = require("src.engine.game.world.events.fountainfloor")
 QuicksaveEvent = require("src.engine.game.world.events.quicksave")
 MirrorArea = require("src.engine.game.world.events.mirror")
+ClimbEntry = require("src.engine.game.world.events.climbing.climbentry")
+ClimbExit = require("src.engine.game.world.events.climbing.climbexit")
+ClimbLanding = require("src.engine.game.world.events.climbing.climblanding")
+ClimbArea = require("src.engine.game.world.events.climbing.climbarea")
+ClimbUnsafe = require("src.engine.game.world.events.climbing.climbunsafe")
+FallingClimbArea = require("src.engine.game.world.events.climbing.fallingclimbarea")
+ClimbMover = require("src.engine.game.world.events.climbing.climbmover")
 
 ToggleController = require("src.engine.game.world.events.controllers.togglecontroller")
 FountainShadowController = require("src.engine.game.world.events.controllers.fountainshadowcontroller")
@@ -237,17 +281,21 @@ TensionBarGlow = require("src.engine.game.battle.ui.tensionbarglow")
 SpeechBubble = require("src.engine.game.battle.ui.speechbubble")
 
 FlashFade = require("src.engine.game.effects.flashfade")
+SpriteCutHalf = require("src.engine.game.effects.spritecuthalf")
 DamageNumber = require("src.engine.game.effects.damagenumber")
 RecruitMessage = require("src.engine.game.effects.recruitmessage")
 HeartBurst = require("src.engine.game.effects.heartburst")
 HealSparkle = require("src.engine.game.effects.healsparkle")
 SpareSparkle = require("src.engine.game.effects.sparesparkle")
 SpareZ = require("src.engine.game.effects.sparez")
+CherubFeather = require("src.engine.game.effects.cherubfeather")
+ReviveSongEffect = require("src.engine.game.effects.revivesongeffect")
 SleepMistEffect = require("src.engine.game.effects.sleepmisteffect")
 SnowglobeEffect = require("src.engine.game.effects.snowglobeeffect")
 IceSpellEffect = require("src.engine.game.effects.icespelleffect")
 IceSpellBurst = require("src.engine.game.effects.icespellburst")
 SnowGraveSnowflake = require("src.engine.game.effects.snowgravesnowflake")
+ScythemareEffect = require("src.engine.game.effects.scythemareeffect")
 FatalEffect = require("src.engine.game.effects.fataleffect")
 RudeBusterBeam = require("src.engine.game.effects.rudebusterbeam")
 RudeBusterBurst = require("src.engine.game.effects.rudebusterburst")
@@ -420,8 +468,8 @@ function love.run()
             end
         else
             local err_msg_expose
-            local success, result = xpcall(mainLoop, 
-                function(err_msg) 
+            local success, result = xpcall(mainLoop,
+                function(err_msg)
                     --has a chance of failing due to a stack overflow. try and catch that, but this *also* might cause a stack overflow
                     local ok, msg = pcall(Kristal.errorHandler, err_msg, 4)
                     if(ok) then
@@ -438,7 +486,7 @@ function love.run()
                 error_result = result
             else
                 --this should only happen when there's an internal error with the errorhandler or the callstack overflows
-                --the LUA_ERRERR state is set internally by the lua engine for both of these cases 
+                --the LUA_ERRERR state is set internally by the lua engine for both of these cases
                 --see https://www.lua.org/source/5.4/ldo.c.html
                 error_result = Kristal.errorHandler({ critical = result, msg = err_msg_expose })
             end

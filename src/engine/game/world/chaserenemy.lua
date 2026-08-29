@@ -6,7 +6,7 @@
 ---
 ---@field encounter string *[Property `encounter`]* The encounter ID that will trigger when the player collides with the enemy.
 ---@field enemy string *[Property `enemy`]* The actor ID to use for this enemy.
----@field group string *[Property `group`]* An arbitrary ID that can be be used to group enemies together in a room. When one enemy in a group is defeated, all enemies in the group are defeated as well. 
+---@field group string *[Property `group`]* An arbitrary ID that can be be used to group enemies together in a room. When one enemy in a group is defeated, all enemies in the group are defeated as well.
 ---
 ---@field path string *[Property `path`]* The name of a path shape in the current map that the enemy will follow.
 ---@field speed number *[Property `speed`]* The speed that the enemy will move along the path specified in `path`, if defined.
@@ -32,11 +32,11 @@
 ---
 ---@field once boolean *[Property `once`]* Whether this enemy can only be encountered once (Will not respawn when the room reloads) (Defaults to `false`)
 ---
----@field aura boolean *[Property `aura`]* Whether this enemy will have an aura around it as seen with enemies in Deltarune Chapter 2. Overrides the mod-wide config for enemy auras.
+---@field aura boolean *[Property `aura`]* Whether this enemy will have an aura around it as seen with enemies in Deltarune Chapter 2. Overrides the project-wide config for enemy auras.
 ---
 ---*[Property `actor`]* Actor to use for this enemy \
 ---*[Property `sprite` or `animation`]* Default sprite/animation to set on this enemy
----@field sprite ActorSprite 
+---@field sprite ActorSprite
 ---
 ---@field chase_timer number
 ---@field pace_timer number
@@ -302,7 +302,7 @@ function ChaserEnemy:update()
         if self.alert_timer == 0 and self.can_chase and not self.chasing then
             if self.world.player then
                 Object.startCache()
-                local in_radius = self.world.player:collidesWith(CircleCollider(self.world, self.x, self.y, self.chase_dist))
+                local in_radius = self.world.player:meetsCollider(CircleCollider(self.world, self.x, self.y, self.chase_dist))
                 if in_radius then
                     local sight = LineCollider(self.world, self.x, self.y, self.world.player.x, self.world.player.y)
                     if not self.world:checkCollision(sight, true) and not self.world:checkCollision(self.collider, true) then

@@ -4,8 +4,8 @@ local MathUtils = {}
 ---
 --- Checks if a number is an integer.
 ---
---- @param value number # The number to check.
---- @return boolean is_integer # Whether the value is an integer or not.
+---@param value number # The number to check.
+---@return boolean is_integer # Whether the value is an integer or not.
 ---
 function MathUtils.isInteger(value)
     return (math.floor(value) == value)
@@ -174,6 +174,20 @@ end
 ---
 function MathUtils.lerpPoint(x1, y1, x2, y2, t)
     return MathUtils.lerp(x1, x2, t), MathUtils.lerp(y1, y2, t)
+end
+
+---
+--- Performs an inverse lerp, returning the percentage (from 0 to 1) that a value is between two numbers.
+---
+---@param a number     # The start value of the range.
+---@param b number     # The end value of the range.
+---@param value number # The value to check.
+---@return number t # The percentage (from 0 to 1) that the value is between the specified range.
+function MathUtils.inverseLerp(a, b, value)
+    if a == b then
+        return 0
+    end
+    return (value - a) / (b - a)
 end
 
 ---
@@ -355,7 +369,7 @@ function MathUtils.xor(...)
 end
 
 ---
----Lerps between two angles properly accounting for wrap arounds
+--- Lerps between two angles properly accounting for wrap arounds
 ---
 ---@param from number # The starting angle (in radians)
 ---@param to number # The target angle (in radians)

@@ -291,6 +291,8 @@ function MainMenuOptions:onKeyPressedVolume(key, is_repeat)
     if Input.isCancel(key) or Input.isConfirm(key) then
         Kristal.setVolume(MathUtils.round(Kristal.getVolume() * 100) / 100)
 
+        Kristal.saveConfig()
+
         Assets.stopAndPlaySound("ui_select")
         self:setState("MENU")
     end
@@ -388,7 +390,8 @@ function MainMenuOptions:onKeyPressedWindowScale(key, is_repeat)
         self:setState("MENU")
     end
 
-    local scale = Kristal.Config["windowScale"]
+    local old_scale = Kristal.getWindowScale()
+    local scale = old_scale
 
     if Input.is("right", key) then
         if scale < 1 then
@@ -411,11 +414,15 @@ function MainMenuOptions:onKeyPressedWindowScale(key, is_repeat)
         end
     end
 
-    if Kristal.Config["windowScale"] ~= scale then
+    if old_scale ~= scale then
         Assets.stopAndPlaySound("ui_move")
 
         Kristal.Config["fullscreen"] = false
         Kristal.Config["windowScale"] = scale
+
+        if Kristal.Config["autoWindowScale"] then
+            Kristal.Config["autoWindowScale"] = false
+        end
 
         Kristal.resetWindow()
     end
@@ -555,35 +562,52 @@ function MainMenuOptions:initializeOptions()
 
     self:registerConfigOption("general", "Auto-Run", "autoRun")
 
-    self:registerConfigOption("general", "Discord RPC", "discordRPC", function(toggled)
-        if DISCORD_RPC_AVAILABLE then
+    if DISCORD_RPC_AVAILABLE then
+        self:registerConfigOption("general", "Discord RPC", "discordRPC", function(toggled)
             if toggled then
                 DiscordRPC.initialize(DISCORD_RPC_ID, true)
                 DiscordRPC.updatePresence(Kristal.getPresence())
             else
                 DiscordRPC.shutdown()
             end
-        end
-    end)
+        end)
+    end
 
     ---------------------
     -- Graphics Options
     ---------------------
 
-    self:registerConfigOption({ "general", "graphics" }, "Fullscreen", "fullscreen", function(toggled)
-        love.window.setFullscreen(toggled)
-    end)
+    if not Kristal.isForcedFullscreen() then
+        self:registerConfigOption({ "general", "graphics" }, "Fullscreen", "fullscreen", function(toggled)
+            love.window.setFullscreen(toggled)
+        end)
 
-    self:registerOption(
-        { "general", "graphics" },
-        "Window Scale",
-        function()
-            return tostring(Kristal.Config["windowScale"]) .. "x"
-        end,
-        function()
-            self:setState("WINDOWSCALE")
-        end
-    )
+        self:registerOption(
+            { "general", "graphics" },
+            "Window Scale",
+            function()
+                return tostring(Kristal.getWindowScale()) .. "x"
+            end,
+            function()
+                self:setState("WINDOWSCALE")
+            end
+        )
+
+        self:registerOption({ "general", "graphics" }, "Auto Scale Window", function()
+                return Kristal.Config["autoWindowScale"] and "ON" or "OFF"
+            end, function()
+                local old_scale = Kristal.getWindowScale()
+                Kristal.Config["autoWindowScale"] = not Kristal.Config["autoWindowScale"]
+                if old_scale ~= Kristal.getWindowScale() then
+                    if Kristal.Config["fullscreen"] then
+                        love.window.setFullscreen(false)
+                        Kristal.Config["fullscreen"] = false
+                    end
+                    Kristal.resetWindow()
+                end
+            end
+        )
+    end
 
     self:registerOption(
         { "general", "graphics" },
@@ -626,15 +650,6 @@ function MainMenuOptions:initializeOptions()
 
     self:registerConfigOption("graphics", "Frame Skip", "frameSkip")
 
-    self:registerConfigOption(
-        "graphics",
-        "Broken Menu Boxes",
-        "brokenMenuBoxes",
-        function(toggled)
-            self.menu.mod_list:buildModList()
-        end
-    )
-
     ---------------------
     -- Engine Options
     ---------------------
@@ -654,8 +669,6 @@ function MainMenuOptions:initializeOptions()
     )
 
     self:registerConfigOption("engine", "Skip Name Entry", "skipNameEntry")
-
-    self:registerConfigOption("engine", "Debug Hotkeys", "debug")
     self:registerConfigOption("engine", "Verbose Loader", "verboseLoader")
     self:registerConfigOption("engine", "Use System Mouse", "systemCursor", function() Kristal.updateCursor() end)
     self:registerConfigOption("engine", "Always Show Mouse", "alwaysShowCursor", function() Kristal.updateCursor() end)

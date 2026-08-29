@@ -9,6 +9,9 @@ function DarkPowerMenu:init()
 
     self.font = Assets.getFont("main")
 
+    self.layer = WORLD_LAYERS["ui"]
+    self:setParallax(0, 0)
+
     self.ui_move = Assets.newSound("ui_move")
     self.ui_select = Assets.newSound("ui_select")
     self.ui_cant_select = Assets.newSound("ui_cant_select")
@@ -20,15 +23,15 @@ function DarkPowerMenu:init()
     self.tp_sprite = Assets.getTexture("ui/menu/caption_tp")
 
     self.caption_sprites = {
-          ["char"] = Assets.getTexture("ui/menu/caption_char"),
-         ["stats"] = Assets.getTexture("ui/menu/caption_stats"),
+        ["char"] = Assets.getTexture("ui/menu/caption_char"),
+        ["stats"] = Assets.getTexture("ui/menu/caption_stats"),
         ["spells"] = Assets.getTexture("ui/menu/caption_spells"),
     }
 
     self.stat_icons = {
-         ["attack"] = Assets.getTexture("ui/menu/icon/sword"),
+        ["attack"] = Assets.getTexture("ui/menu/icon/sword"),
         ["defense"] = Assets.getTexture("ui/menu/icon/armor"),
-          ["magic"] = Assets.getTexture("ui/menu/icon/magic"),
+        ["magic"] = Assets.getTexture("ui/menu/icon/magic"),
    }
 
     self.bg = UIBox(0, 0, self.width, self.height)
@@ -38,7 +41,10 @@ function DarkPowerMenu:init()
 
     self.party = DarkMenuPartySelect(8, 48)
     self.party.focused = true
-    self.party.highlight_party = false
+    -- TODO: Game.chapter usage!
+    if Game.chapter == 1 then
+        self.party.highlight_party = false
+    end
     self:addChild(self.party)
 
     self.party.on_select = function(new, old)
@@ -181,10 +187,23 @@ function DarkPowerMenu:selectParty(target_type, spell)
 end
 
 function DarkPowerMenu:canCast(spell)
-    if not Game:getConfig("overworldSpells") then return false end
-    if Game:getTension() < spell:getTPCost(self.party:getSelected()) then return false end
+    -- Check if we can use overworld spells
+    if not Game:getConfig("overworldSpells") then
+        return false
+    end
 
-    return (spell:hasWorldUsage(self.party:getSelected()))
+    -- Okay, do we actually have a world usage?
+    if not spell:hasWorldUsage(self.party:getSelected()) then
+        return false
+    end
+
+    -- Do we have enough tension?
+    if Game:getTension() < spell:getTPCost(self.party:getSelected()) then
+        return false
+    end
+
+    -- Yes to everything!
+    return true
 end
 
 function DarkPowerMenu:draw()
@@ -271,7 +290,7 @@ function DarkPowerMenu:drawSpells()
         else
             Draw.setColor(1, 1, 1)
         end
-        love.graphics.print(tostring(spell:getTPCost(self.party:getSelected())).."%", tp_x, tp_y + (offset * 25))
+        love.graphics.print(spell:getPowerMenuTPDisplay(self.party:getSelected()), tp_x, tp_y + (offset * 25))
         love.graphics.print(spell:getName(), name_x, name_y + (offset * 25))
     end
 

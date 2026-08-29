@@ -11,7 +11,7 @@
 ---
 ---@field left number Leftmost horizontal position of the arena. May be inaccurate if the arena is transformed. Use [`Arena:getLeft()`](lua://Arena.getLeft) where possible.
 ---@field right number Rightost horizontal position of the arena. May be inaccurate if the arena is transformed. Use [`Arena:getRight()`](lua://Arena.getRight) where possible.
----@field top number Topmost vertical position of the arena. May be inaccurate if the arena is transformed. Use [`Arena:getLeft()`](lua://Arena.getTop) where possible.
+---@field top number Topmost vertical position of the arena. May be inaccurate if the arena is transformed. Use [`Arena:getTop()`](lua://Arena.getTop) where possible.
 ---@field bottom number Bottommost vertical position of the arena. May be inaccurate if the arena is transformed. Use [`Arena:getBottom()`](lua://Arena.getBottom) where possible.
 ---
 ---@field line_width integer The thickness of the arena border in pixels, must call [`Arena:setShape()`](lua://Arena.setShape) or [`Arena:setSize()`](lua://Arena.setSize) after changing this to make the change take effect. (Defaults to `4`)
@@ -86,18 +86,19 @@ function Arena:setShape(shape)
     self.top = math.floor(self.y - self.height / 2)
     self.bottom = math.floor(self.y + self.height / 2)
 
-    self.triangles = love.math.triangulate(Utils.unpackPolygon(self.shape))
+    self.triangles = love.math.triangulate(ShapeUtils.unpackPolygon(self.shape))
 
-    self.border_line = { Utils.unpackPolygon(Utils.getPolygonOffset(self.shape, self.line_width / 2)) }
+    self.border_line = { ShapeUtils.unpackPolygon(ShapeUtils.getPolygonOffset(self.shape, self.line_width / 2)) }
 
-    self.clockwise = Utils.isPolygonClockwise(self.shape)
+    self.clockwise = ShapeUtils.isPolygonClockwise(self.shape)
 
     self.area_collider = PolygonCollider(self, TableUtils.copy(shape, true))
 
-    self.collider.colliders = {}
-    for _, v in ipairs(Utils.getPolygonEdges(self.shape)) do
-        table.insert(self.collider.colliders, LineCollider(self, v[1][1], v[1][2], v[2][1], v[2][2]))
+    local colliders = {}
+    for _, v in ipairs(ShapeUtils.getPolygonEdges(self.shape)) do
+        table.insert(colliders, LineCollider(self, v[1][1], v[1][2], v[2][1], v[2][2]))
     end
+    self.collider:setColliders(colliders)
 end
 
 ---@param r number
@@ -244,13 +245,13 @@ function Arena:update()
     if soul and Game.battle.soul.collidable then
         Object.startCache()
         local angle_diff = self.clockwise and -(math.pi / 2) or (math.pi / 2)
-        for _, line in ipairs(self.collider.colliders) do
+        for _, line in ipairs(self.collider:getCollidersDirect()) do
             ---@cast line LineCollider
 
             local angle
-            while soul:collidesWith(line) do
+            while soul:meetsCollider(line) do
                 if not angle then
-                    local x1, y1 = self:getRelativePos(line.x, line.y, Game.battle)
+                    local x1, y1 = self:getRelativePos(line.x1, line.y1, Game.battle)
                     local x2, y2 = self:getRelativePos(line.x2, line.y2, Game.battle)
                     angle = Utils.angle(x1, y1, x2, y2)
                 end

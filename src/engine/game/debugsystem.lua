@@ -1,7 +1,7 @@
 ---@class DebugSystem : Object
 ---
 ---@field flag_type             string          The current flag filter setting for value type
----@field flag_query            { [1]: string } The current flag filter query 
+---@field flag_query            { [1]: string } The current flag filter query
 ---@field flag_filter_mode      string          The current flag filter mode
 ---
 ---@field temp_flag_type        string          Temporary version of [`flag_type`](lua://DebugSystem.flag_type). Only set as filter once the settings are saved.
@@ -137,7 +137,7 @@ function DebugSystem:onMousePressed(x, y, button, istouch, presses)
     if button == 3 then
         if self:selectionOpen() then
             self:closeSelection()
-        else
+        elseif Kristal.isDevMode() then
             self:openSelection()
         end
         return
@@ -384,6 +384,10 @@ function DebugSystem:addToExclusiveMenu(state, id)
 end
 
 function DebugSystem:fadeMusicOut(fade_to)
+    if not self:isInGame() then
+        return
+    end
+
     local music = Game:getActiveMusic()
     if music then
         self.old_music_volume = music.volume
@@ -393,6 +397,10 @@ function DebugSystem:fadeMusicOut(fade_to)
 end
 
 function DebugSystem:fadeMusicIn()
+    if not self:isInGame() then
+        return
+    end
+
     local music = Game:getActiveMusic()
     if music and self.music_needs_reset then
         music:fade(self.old_music_volume, 0.5)
@@ -441,6 +449,7 @@ function DebugSystem:enterMenu(menu, soul, skip_history)
     self.current_menu = menu
     self.current_selecting = soul or self.current_selecting or 1
     self:updateBounds(self:getValidOptions())
+    self.menu_y = self.menu_target_y
 
     if (self.menu_entry_callbacks[self.current_menu]) then
         self.menu_entry_callbacks[self.current_menu]()
@@ -555,7 +564,6 @@ function DebugSystem:registerSubMenus()
     )
 
     self:registerConfigOption("engine_options", "Frame Skip", "Toggle frame skipping.", "frameSkip")
-    self:registerOption("engine_options", "Print Performance", "Show performance in the console.", function() PERFORMANCE_TEST_STAGE = "UPDATE" end)
     self:registerOption("engine_options", "Force GC", "Force a garbage collection.", function() collectgarbage("collect") end)
     self:registerOption("engine_options", "Force Crash", "Force a crash.", function() error("Debug crash!") end)
     self:registerOption("engine_options", "Back", "Go back to the previous menu.", function() self:returnMenu() end)
@@ -596,7 +604,7 @@ function DebugSystem:registerSubMenus()
     end)
 
     self:registerOption("engine_option_fps", "Back", "Go back to the previous menu.", function() self:returnMenu() end)
-    
+
     self:registerMenu("fast_forward", "Fast Forward")
     self:registerOption(
         "fast_forward",
@@ -951,6 +959,11 @@ function DebugSystem:registerSubMenus()
         "music_test",
         function()
             self:fadeMusicOut(0)
+            if self.music then
+                self.music:remove()
+                self.music = nil
+            end
+            self.music = Music()
         end
     )
     self:registerMenuLeave(
@@ -960,7 +973,8 @@ function DebugSystem:registerSubMenus()
             self.music:fade(
                 0, 0.5,
                 function()
-                    self.music:stop()
+                    self.music:remove()
+                    self.music = nil
                 end
             )
         end
@@ -1025,8 +1039,6 @@ function DebugSystem:registerSubMenus()
         )
     end
 
-    -- TODO: toggle rather than only give
-
     self:registerMenu("give_spell", "Give Spell", "search")
 
     for id, _ in pairs(Registry.party_members) do
@@ -1080,8 +1092,12 @@ function DebugSystem:registerSubMenus()
     end
 end
 
+function DebugSystem:isInGame()
+    return Kristal.getState() == Game
+end
+
 function DebugSystem:registerDefaults()
-    local in_game = function() return Kristal.getState() == Game end
+    local in_game = function() return self:isInGame() end
     local in_battle = function() return in_game() and Game.state == "BATTLE" end
     local in_overworld = function() return in_game() and Game.state == "OVERWORLD" end
     local in_legend = function() return in_game() and Game.state == "LEGEND" end
@@ -1189,6 +1205,14 @@ function DebugSystem:registerDefaults()
 
     self:registerOption(
         "main",
+        "Invincibility",
+        function() return self:appendBool("Toggle invincibility.", INVINCIBILITY) end,
+        function() INVINCIBILITY = not INVINCIBILITY end,
+        in_game
+    )
+
+    self:registerOption(
+        "main",
         "Give Item",
         "Give an item.",
         function()
@@ -1205,12 +1229,14 @@ function DebugSystem:registerDefaults()
                 function(text)
                     local money = tonumber(text)
                     if money then
-                        if Game:isLight() then
-                            Game.lw_money = Game.lw_money + money
-                        else
-                            Game.money = Game.money + money
+                        if not MathUtils.isNaN(money) and not (money == math.huge) then
+                            if Game:isLight() then
+                                Game.lw_money = Game.lw_money + money
+                            else
+                                Game.money = Game.money + money
+                            end
+                            Assets.stopAndPlaySound("bell_bounce_short")
                         end
-                        Assets.stopAndPlaySound("bell_bounce_short")
                     end
                 end
             )
@@ -1467,7 +1493,11 @@ function DebugSystem:onStateChange(old, new)
         Kristal.showCursor()
     elseif new == "IDLE" then
         self:unselectObject()
-        self.menu_anim_timer = 0
+
+        if old ~= "IDLE" then
+            self.menu_anim_timer = 0
+        end
+
         OVERLAY_OPEN = false
 
         Kristal.hideCursor()
@@ -1527,7 +1557,7 @@ function DebugSystem:onStateChange(old, new)
 end
 
 ---@param options table|number
-function DebugSystem:updateBounds(options)
+function DebugSystem:updateBounds(options, is_repeat)
     local is_search = (self.menus[self.current_menu].type == "search")
     if self.state == "FLAGS" then
         is_search = false
@@ -1538,6 +1568,11 @@ function DebugSystem:updateBounds(options)
     end
 
     local limit = is_search and 0 or 1
+
+    if is_repeat then
+        self.current_selecting = MathUtils.clamp(self.current_selecting, limit, options)
+    end
+
     if self.current_selecting < limit then self.current_selecting = options end
     if self.current_selecting > options then self.current_selecting = limit end
     if self.state == "MENU" or self.state == "FLAGS" or self.state == "FLAG_FILTERS" then
@@ -1608,10 +1643,12 @@ function DebugSystem:onKeyPressed(key, is_repeat)
             else
                 local option = options[self.current_selecting]
                 if option then
+                    local menu = self.current_menu
                     local failsound = option.func() == false
+                    Input.clear("confirm")
                     if failsound then
                         Assets.playSound("ui_cant_select")
-                    elseif self.current_menu ~= "sound_test" then
+                    elseif menu ~= "sound_test" then
                         Assets.playSound("ui_select")
                     end
                 end
@@ -1619,15 +1656,38 @@ function DebugSystem:onKeyPressed(key, is_repeat)
         end
 
         local limit = (self.menus[self.current_menu].type == "search") and 0 or 1
-        if Input.is("down", key) and (not is_repeat or self.current_selecting < #options) then
-            Assets.playSound("ui_move")
+        local old_selecting = self.current_selecting
+
+        if Input.is("down", key) then
             self.current_selecting = self.current_selecting + 1
         end
-        if Input.is("up", key) and (not is_repeat or self.current_selecting > limit) then
-            Assets.playSound("ui_move")
+
+        if Input.is("up", key) then
             self.current_selecting = self.current_selecting - 1
         end
-        self:updateBounds(options)
+
+        if Input.is("left", key) then
+            if self.current_selecting == limit and not is_repeat then
+                self.current_selecting = #options
+            else
+                self.current_selecting = math.max(self.current_selecting - 5, limit)
+            end
+        end
+
+        if Input.is("right", key) then
+            if self.current_selecting == #options and not is_repeat then
+                self.current_selecting = limit
+            else
+                self.current_selecting = math.min(self.current_selecting + 5, #options)
+            end
+        end
+
+        self:updateBounds(options, is_repeat)
+
+        if old_selecting ~= self.current_selecting then
+            Assets.playSound("ui_move")
+        end
+
     elseif self.state == "SELECTION" and not is_repeat then
         -- Gamepad
         if (key == "gamepad:a") and Input.usingGamepad() then
@@ -1857,7 +1917,7 @@ function DebugSystem:update()
             stage.active = true
         end
     end
-    
+
     if self:isMenuOpen() then
         -- Create a table to store states that should be excluded
         local excluded_states = {}
@@ -1891,6 +1951,10 @@ function DebugSystem:onWheelMoved(x, y)
 end
 
 function DebugSystem:draw()
+    if self.state == "IDLE" and self.menu_anim_timer >= 1 then
+        return
+    end
+
     love.graphics.setFont(self.font)
     Draw.setColor(1, 1, 1, 1)
 
@@ -1968,7 +2032,11 @@ function DebugSystem:draw()
             if type(color) == "function" then
                 color = color()
             end
-            self:printShadow(name, text_offset + 19, y_off + menu_y + (index - 1) * 32 + 16 + (is_search and 64 or 0) + self.menu_y, color)
+            local x = text_offset + 19
+            local y = y_off + menu_y + (index - 1) * 32 + 16 + (is_search and 64 or 0) + self.menu_y
+            if y > 0 and y < SCREEN_HEIGHT then
+                self:printShadow(name, x, y, color)
+            end
         end
         Draw.popScissor()
 
@@ -2029,7 +2097,11 @@ function DebugSystem:draw()
             local x = (i - 1) % faces_per_row
             local y = math.floor((i - 1) / faces_per_row)
             local texture = Assets.getTexture("face/" .. texture_id)
-            Draw.draw(texture, x_offset + (x * gap), y_offset + (self.faces_y + (y * gap)), 0, 2, 2)
+            local draw_x = x_offset + (x * gap)
+            local draw_y = y_offset + (self.faces_y + (y * gap))
+            if draw_y > 0 and draw_y < SCREEN_HEIGHT then
+                Draw.draw(texture, draw_x, draw_y, 0, 2, 2)
+            end
 
             local width = texture:getWidth() * 2
             local height = texture:getHeight() * 2
@@ -2317,12 +2389,10 @@ function DebugSystem:draw()
             end
             local info = object:getDebugInfo()
 
-            local small = #info > 7
-
             for i, line in ipairs(info) do
                 self:printShadow(
-                    line, x_offset, (32 * inc) + ((i - 1) * (small and 16 or 32)) + 10, { 1, 1, 1, self.selected_alpha },
-                    self.current_text_align, limit * (small and 2 or 1), small and 0.5 or 1
+                    line, x_offset, (32 * inc) + ((i - 1) * 16) + 10, { 1, 1, 1, self.selected_alpha },
+                    self.current_text_align, limit * 2, 0.5
                 )
             end
         end

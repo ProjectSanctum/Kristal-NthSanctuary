@@ -27,7 +27,6 @@
 ---
 ---@field speed             number          The speed of the soul, in pixels per frame at 30FPS (defaults to `4`)
 ---
----@field inv_timer         number          The remaining invulnerability time for the soul
 ---@field inv_flash_timer   number          *(Used internally)* A timer for the flashing of the soul when invulnerable
 ---
 ---@field partial_x         number          *(Used internally)* Stores the fractional part of the soul's x-coordinate
@@ -36,7 +35,7 @@
 ---@field last_collided_x   boolean|number  The direction `(+/-)` the soul moved and collided with an object last frame on the x-axis (`false` when the soul has not moved, `0` when there is no collision)
 ---@field last_collided_y   boolean|number  The direction `(+/-)` the soul moved and collided with an object last frame on the y-axis (`false` when the soul has not moved, `0` when there is no collision)
 ---
----@field x                 integer         The soul's truncated (whole) x-coordinate. Its fractional part is in [`partial_x`](lua://Soul.x). 
+---@field x                 integer         The soul's truncated (whole) x-coordinate. Its fractional part is in [`partial_x`](lua://Soul.x).
 ---@field y                 integer         The soul's truncated (whole) y-coordinate. Its fractional part is in [`partial_y`](lua://Soul.y).
 ---
 ---@field moving_x          number          The `x` value the soul is moving by
@@ -106,7 +105,6 @@ function Soul:init(x, y, color)
     self.transitioning = false
     self.speed = 4
 
-    self.inv_timer = 0
     self.inv_flash_timer = 0
 
     -- 1px movement increments
@@ -222,8 +220,8 @@ function Soul:setExactPosition(x, y)
 end
 
 --- Moves the soul by `x` and `y`, accounting for collision in the soul's movement path
----@param x?     number 
----@param y?     number 
+---@param x?     number
+---@param y?     number
 ---@param speed? number An optional multiplier to the amount of `x` and `y` that the soul moves by.
 ---@return boolean  moved       Whether the soul moved from its previous position
 ---@return boolean  collided    Whether the soul collided with something on its movement path
@@ -305,13 +303,13 @@ function Soul:moveXExact(amount, move_y)
         if not self.noclip then
             Object.uncache(self)
             Object.startCache()
-            local collided, target = Game.battle:checkSolidCollision(self)
+            local collided, target = Game.battle:solidMeetsObject(self)
             if self.slope_correction then
                 if collided and not (move_y > 0) then
                     for j = 1, 2 do
                         Object.uncache(self)
                         self.y = self.y - 1
-                        collided, target = Game.battle:checkSolidCollision(self)
+                        collided, target = Game.battle:solidMeetsObject(self)
                         if not collided then break end
                     end
                 end
@@ -320,7 +318,7 @@ function Soul:moveXExact(amount, move_y)
                     for j = 1, 2 do
                         Object.uncache(self)
                         self.y = self.y + 1
-                        collided, target = Game.battle:checkSolidCollision(self)
+                        collided, target = Game.battle:solidMeetsObject(self)
                         if not collided then break end
                     end
                 end
@@ -360,13 +358,13 @@ function Soul:moveYExact(amount, move_x)
         if not self.noclip then
             Object.uncache(self)
             Object.startCache()
-            local collided, target = Game.battle:checkSolidCollision(self)
+            local collided, target = Game.battle:solidMeetsObject(self)
             if self.slope_correction then
                 if collided and not (move_x > 0) then
                     for j = 1, 2 do
                         Object.uncache(self)
                         self.x = self.x - 1
-                        collided, target = Game.battle:checkSolidCollision(self)
+                        collided, target = Game.battle:solidMeetsObject(self)
                         if not collided then break end
                     end
                 end
@@ -375,7 +373,7 @@ function Soul:moveYExact(amount, move_x)
                     for j = 1, 2 do
                         Object.uncache(self)
                         self.x = self.x + 1
-                        collided, target = Game.battle:checkSolidCollision(self)
+                        collided, target = Game.battle:solidMeetsObject(self)
                         if not collided then break end
                     end
                 end
@@ -426,6 +424,14 @@ end
 ---@param bullet Bullet
 ---@param old_graze boolean
 function Soul:onGraze(bullet, old_graze) end
+
+--- *(Override)* Whether the soul should decrease the invulnerability timer.
+---
+--- By default, this returns `true` unless the soul is currently transitioning.
+---@return boolean decrease_invuln # `true` if the invulnerability timer should decrease.
+function Soul:shouldDecreaseInvuln()
+    return not self.transitioning
+end
 
 --- Called every frame from within [`Soul:update()`](lua://Soul.update) if the soul is able to move. \
 --- Movement for the soul based on player input should be controlled within this method.
@@ -487,20 +493,16 @@ function Soul:update()
     end
 
     -- Bullet collision !!! Yay
-    if self.inv_timer > 0 then
-        self.inv_timer = MathUtils.approach(self.inv_timer, 0, DT)
-    end
-
     local collided_bullets = {}
     Object.startCache()
     for _, bullet in ipairs(Game.stage:getObjects(Bullet)) do
-        if bullet:collidesWith(self.collider) then
+        if bullet:meetsCollider(self:getCollider()) then
             -- Store collided bullets to a table before calling onCollide
             -- to avoid issues with cacheing inside onCollide
             table.insert(collided_bullets, bullet)
         end
-        if self.inv_timer == 0 then
-            if bullet:canGraze() and bullet:collidesWith(self.graze_collider) then
+        if not Game:hasInvulnerability() then
+            if bullet:canGraze() and bullet:meetsCollider(self.graze_collider) then
                 local old_graze = bullet.grazed
                 if bullet.grazed then
                     Game:giveTension(bullet:getGrazeTension() * DT * self.graze_tp_factor)
@@ -530,7 +532,7 @@ function Soul:update()
         self:onCollide(bullet)
     end
 
-    if self.inv_timer > 0 then
+    if Game.inv_frames > 0 then
         self.inv_flash_timer = self.inv_flash_timer + DT
         local amt = math.floor(self.inv_flash_timer / (4 / 30))
         if (amt % 2) == 1 then

@@ -113,7 +113,7 @@ function MainMenuCredits:init(menu)
                 "Temmie Chang",
                 "DELTARUNE team",
                 "",
-                "",
+                ""
             },
             {
                 { "GitHub Contributors", COLORS.silver },
@@ -134,31 +134,44 @@ function MainMenuCredits:init(menu)
                 { "GitHub Contributors", COLORS.silver },
                 "Dobby233Liu",
                 "Elioze",
+                "Eribetra",
                 "FireRainV",
+                "Gabrielcito",
+                "HmmNoPls",
                 "HUECYCLES",
                 "Hyperboid",
-                "isakube",
-                "J.A.R.U.",
-                "Lionmeow",
-                "Luna",
+                "isakube"
             },
             {
                 { "GitHub Contributors", COLORS.silver },
+                "J.A.R.U.",
+                "Jogla",
+                "Lionmeow",
+                "Luna",
+                "Maks7594",
                 "MaybeSamo",
                 "MCdeDaxia",
-                "MrOinky",
-                "NelleMonelle",
-                "Nextop",
-                "nightpool",
-                "prokube",
-                "Simbel",
-                "sjl057"
+                "MihBoss96",
+                "mpjasonreal"
             }
         },
         {
             "Kristal Engine",
             {
                 { "GitHub Contributors", COLORS.silver },
+                "MrOinky",
+                "NakuAutumn",
+                "NelleMonelle",
+                "Nextop",
+                "nightpool",
+                "prokube",
+                "raisinbrainguy",
+                "rfrx",
+                "Simbel"
+            },
+            {
+                { "GitHub Contributors", COLORS.silver },
+                "sjl057",
                 "skarph",
                 "SuperOfSrb2",
                 "SweetSylveon",
@@ -166,9 +179,7 @@ function MainMenuCredits:init(menu)
                 "TheSkerch",
                 "Verozity",
                 "WIL-TZY",
-                "YeetusSnoopy",
-                "",
-                ""
+                "YeetusSnoopy"
             }
         }
     }

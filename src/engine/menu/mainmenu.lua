@@ -42,6 +42,7 @@ function MainMenu:enter()
     self.title_screen = MainMenuTitle(self)
     self.options = MainMenuOptions(self)
     self.credits = MainMenuCredits(self)
+    self.about = MainMenuAbout(self)
     self.mod_list = MainMenuModList(self)
     self.mod_create = MainMenuModCreate(self)
     self.mod_config = MainMenuModConfig(self)
@@ -58,6 +59,7 @@ function MainMenu:enter()
     self.state_manager:addState("TITLE", self.title_screen)
     self.state_manager:addState("OPTIONS", self.options)
     self.state_manager:addState("CREDITS", self.credits)
+    self.state_manager:addState("ABOUT", self.about)
     self.state_manager:addState("MODSELECT", self.mod_list)
     self.state_manager:addState("MODCREATE", self.mod_create)
     self.state_manager:addState("MODCONFIG", self.mod_config)
@@ -121,19 +123,22 @@ function MainMenu:enter()
         instance = 1
     })
 
-    GitFinder:fetchLatestCommit(function(status, body, headers)
-        if status == nil then return end -- request failed somehow (no SSL?)
-        if status < 200 or status >= 300 then return end -- non-success status code
+    if not RELEASE_MODE then
+        -- We're in an interm build, so check updates
+        GitFinder:fetchLatestCommit(function(status, body, headers)
+            if status == nil then return end -- request failed somehow (no SSL?)
+            if status < 200 or status >= 300 then return end -- non-success status code
 
-        local current_commit = GitFinder:fetchCurrentCommit()
-        if current_commit ~= body then
-            self.ver_string = "v" .. tostring(Kristal.Version)
-            if trimmed_commit then
-                self.ver_string = self.ver_string .. " (" .. trimmed_commit .. ")"
+            local current_commit = GitFinder:fetchCurrentCommit()
+            if current_commit ~= body then
+                self.ver_string = "v" .. tostring(Kristal.Version)
+                if trimmed_commit then
+                    self.ver_string = self.ver_string .. " (" .. trimmed_commit .. ")"
+                end
+                self.ver_string = self.ver_string .. " (outdated!)"
             end
-            self.ver_string = self.ver_string .. " (outdated!)"
-        end
-    end)
+        end)
+    end
 
     if TARGET_MOD then
         self.selected_mod = self.mod_list:getSelectedMod()
@@ -443,8 +448,8 @@ function MainMenu:drawVersion()
 
     if not TARGET_MOD then
         local ver_string = self.ver_string
-        if self.state == "TITLE" and Kristal.Version.major == 0 then
-            ver_string = ver_string .. " (Unstable)"
+        if (self.state == "TITLE" or self.state == "ABOUT") and Kristal.Version.major == 0 then
+            ver_string = ver_string .. " (In-development)"
         end
 
         love.graphics.setFont(self.small_font)

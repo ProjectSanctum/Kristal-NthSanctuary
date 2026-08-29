@@ -1,7 +1,7 @@
 --- Savepoints allow the player to SAVE their game. \
 --- `Savepoint` is an [`Event`](lua://Event.init) - naming an object `savepoint` on an `objects` layer in a map creates this object. \
 --- See this object's Fields for the configurable properties on this object. The location displayed on the savefile is determined by the map's `name` property.
---- 
+---
 ---@class Savepoint : Interactable
 ---
 ---@field marker        string  *[Property `marker`]* The name of the marker that the party should spawn at when a save from here is loaded
@@ -71,7 +71,7 @@ function Savepoint:onTextEnd()
     end
 
     if Game:isLight() then
-        self.world:openMenu(LightSaveMenu(Game.save_id, self.marker))
+        self.world:openMenu(LightSaveMenu(self.marker))
     elseif self.simple_menu or (self.simple_menu == nil and Game:getConfig("smallSaveMenu")) then
         self.world:openMenu(SimpleSaveMenu(Game.save_id, self.marker))
     else
@@ -94,7 +94,7 @@ function Savepoint:update()
             end
         end
     end
-    
+
 end
 
 function Savepoint:getDebugInfo()

@@ -21,7 +21,7 @@ function item:init()
     self.description = "Ralsei's handmade book full of\nvarious tips and tricks."
 
     -- Default shop price (sell price is halved)
-    self.price = 0
+    self.price = 1
     -- Whether the item can be sold
     self.can_sell = false
 
@@ -48,7 +48,7 @@ function item:init()
 end
 
 function item:onWorldUse(target)
-    Game.world:showText("* (You tried to read the manual,\nbut it was so dense it made\nyour head spin...)")
+    Game.world:showText("* (You tried to read the manual,[wait:5]\nbut it was so dense it made\nyour head spin...)")
     return false
 end
 

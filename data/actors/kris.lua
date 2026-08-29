@@ -38,7 +38,7 @@ function actor:init()
     -- Table of sprite animations
     self.animations = {
         -- Movement animations
-        ["slide"]               = {"slide", 4/30, true},
+        ["slide"]               = {"slide_new", 4/30, true},
 
         -- Battle animations
         ["battle/idle"]         = {"battle/idle", 1/6, true},
@@ -69,11 +69,8 @@ function actor:init()
         -- Cutscene animations
         ["jump_fall"]           = {"fall", 1/5, true},
         ["jump_ball"]           = {"ball", 1/15, true},
+        ["jump_ball_slow"]      = {"ball", 4/30, true},
     }
-
-    if Game.chapter == 1 then
-        self.animations["battle/transition"] = {"walk/right", 0, true}
-    end
 
     -- Tables of sprites to change into in mirrors
     self.mirror_sprites = {
@@ -94,6 +91,8 @@ function actor:init()
         ["walk_blush/down"] = {0, 0},
 
         ["slide"] = {0, 0},
+        ["slide_animated"] = {-5, -2},
+        ["slide_new"] = {-5, -2},
 
         -- Battle offsets
         ["battle/idle"] = {-5, -1},
@@ -112,6 +111,18 @@ function actor:init()
 
         ["battle/intro"] = {-8, -9},
         ["battle/victory"] = {-3, 0},
+
+        -- Climb offsets
+        ["climb/climbing"] = {-5, -15},
+        ["climb/fall"] = {-3, -14},
+        ["climb/charge"] = {-4, -12},
+        ["climb/charge_right"] = {-4, -12},
+        ["climb/charge_left"] = {-4, -12},
+        ["climb/slip_right"] = {-3, -13},
+        ["climb/slip_left"] = {-2, -13},
+        ["climb/jump_up"] = {-4, -13},
+        ["climb/land_right"] = {-4, -13},
+        ["climb/land_left"] = {-4, -13},
 
         -- Cutscene offsets
         ["pose"] = {-4, -2},
@@ -138,6 +149,19 @@ function actor:init()
 
         ["t_pose"] = {-4, 0},
     }
+
+    if Game.chapter <= 2 then
+        self.animations["slide"] = {"slide", 4/30, true}
+    elseif Game.chapter == 3 then
+        self.animations["slide"] = {"slide_animated", 4/30, true}
+    end
+
+    if Game.chapter == 1 then
+        self.animations["battle/transition"] = {"walk/right", 0, true}
+    end
+
+    -- The x and y offsets of the ReviveSong spotlight
+    self.spotlight_offset = { -2, -5 }
 end
 
 return actor

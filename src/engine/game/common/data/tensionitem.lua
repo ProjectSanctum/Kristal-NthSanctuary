@@ -1,6 +1,6 @@
 --- TensionItem is an extension of Item that provides additional functionality for items that restore TP in battle. \
 --- This class can be extended from in an item file instead of `Item` to include this functionality in the item.
----  
+---
 ---@class TensionItem : Item
 ---
 ---@field tp_amount     number  The amount of TP restored when using this item
@@ -28,13 +28,9 @@ end
 function TensionItem:onBattleSelect(user, target)
     self.tension_given = Game:giveTension(self:getTensionAmount())
 
+    Assets.playSound("cardrive", 0.8, 1.4)
+
     user:flash()
-
-    local sound = Assets.newSound("cardrive")
-    sound:setPitch(1.4)
-    sound:setVolume(0.8)
-    sound:play()
-
     user:sparkle(1, 0.625, 0.25)
 end
 

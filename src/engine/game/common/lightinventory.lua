@@ -86,8 +86,8 @@ function LightInventory:convertToDark()
     end
 
     new_inventory.storage_enabled = was_storage_enabled
-    
-    Game.light_inventory = self
+
+    Game.dark_inventory = new_inventory
 
     return new_inventory
 end
@@ -98,7 +98,7 @@ function LightInventory:getDarkInventory()
     if not self:hasItem("light/ball_of_junk") then
         self:addItem("light/ball_of_junk")
     end
-    
+
     return Game.dark_inventory
 end
 

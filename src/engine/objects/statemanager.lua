@@ -81,10 +81,11 @@ function StateManager:removeEvent(event)
 end
 
 function StateManager:hasEvent(event, state)
-    return self.state_events[event] and self.state_events[event][state or self.state]
+    return self.state_events[event:lower()] and self.state_events[event:lower()][state or self.state]
 end
 
 function StateManager:callOn(state, event, ...)
+    event = event:lower()
     local state_callbacks = self.state_events[event]
     if state_callbacks and state_callbacks[state] then
         local func = state_callbacks[state]
@@ -117,6 +118,7 @@ function StateManager:doIf(...)
 end
 
 function StateManager:hook(state, event, func)
+    event = event:lower()
     self.state_events[event] = self.state_events[event] or {}
     if self.state_events[event][state] then
         local old_func = self.state_events[event][state]

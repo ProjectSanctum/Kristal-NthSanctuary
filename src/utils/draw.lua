@@ -110,7 +110,7 @@ end
 function Draw.setCanvas(canvas, options)
     options = options or {}
     if canvas then
-        if options["stencil"] == false then
+        if options["stencil"] == false or type(canvas) == "table" then
             love.graphics.setCanvas(canvas)
         else
             love.graphics.setCanvas { canvas, stencil = true }
@@ -225,6 +225,8 @@ end
 ---@param shader love.Shader|string
 ---@return love.Shader
 function Draw.pushShader(shader, vars)
+    vars = vars or {}
+
     if type(shader) == "string" then
         if Assets.getShader(shader) ~= nil then
             shader = Assets.getShader(shader)
@@ -509,13 +511,47 @@ function Draw.drawMenuRectangle(x, y, width, height)
     love.graphics.setLineWidth(1)
     love.graphics.setLineStyle("rough")
 
-    local extra = Kristal.Config["brokenMenuBoxes"] and 0 or 1
-
     -- Draw the rectangles
     love.graphics.rectangle("line", x, y, width + 1, height + 1)
-    love.graphics.rectangle("line", x - 1, y - 1, width + 2 + extra, height + 2 + extra)
+    love.graphics.rectangle("line", x - 1, y - 1, width + 3, height + 3)
     love.graphics.rectangle("line", x - 2, y - 2, width + 5, height + 5)
-    love.graphics.rectangle("line", x - 3, y - 3, width + 6 + extra, height + 6 + extra)
+    love.graphics.rectangle("line", x - 3, y - 3, width + 7, height + 7)
+end
+
+--- A helper function to draw a line with an arrow at the end.
+---
+--- This is a reimplementation of GameMaker's `draw_arrow` function.
+--- This is mostly intended for debugging; if you need something more customizable or complex, consider drawing an arrow yourself, or using a sprite.
+---
+---@param x1 number # The starting x position of the line.
+---@param y1 number # The starting y position of the line.
+---@param x2 number # The ending x position of the line.
+---@param y2 number # The ending y position of the line.
+---@param size number # The length of the arrow's head, in pixels.
+function Draw.drawArrow(x1, y1, x2, y2, size)
+    local dir_x = x2 - x1
+    local dir_y = y2 - y1
+
+	local distance = math.sqrt((dir_x * dir_x) + (dir_y * dir_y))
+
+	if distance == 0 then
+        return
+    end
+
+    -- Arrowhead should not be longer than the line itself
+    size = math.min(size, distance)
+
+    local xx = size * dir_x / distance
+    local yy = size * dir_y / distance
+
+    love.graphics.line(x1, y1, x2, y2)
+
+    love.graphics.polygon(
+        "fill",
+        x2 - xx - yy / 3, y2 - yy + xx / 3,
+        x2, y2,
+        x2 - xx + yy / 3, y2 - yy - xx / 3
+    )
 end
 
 return Draw

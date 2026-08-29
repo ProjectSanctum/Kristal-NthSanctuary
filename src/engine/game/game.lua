@@ -15,6 +15,7 @@
 ---@field key_repeat        boolean
 ---@field started           boolean
 ---@field border            string|Border
+---@field inv_frames        number
 ---
 ---@field previous_state    string
 ---@field state             string
@@ -74,6 +75,7 @@ function Game:clear()
     self.key_repeat = false
     self.started = false
     self.border = "simple"
+    self.inv_frames = 0
 end
 
 ---@overload fun(self: Game, previous_state: string, save_data: SaveData, save_id: number)
@@ -197,6 +199,45 @@ function Game:registerBuiltInEvents()
         sprite:play(data.properties["speed"], true)
         sprite:setScale(data.properties["scalex"] or 2, data.properties["scaley"] or 2)
         return sprite
+    end)
+
+    registry:register("climbentry", function(data)
+        return ClimbEntry(data.x, data.y, getRectData(data), {
+            target = data.properties.target,
+            solid = data.properties.solid
+        })
+    end)
+
+    registry:register("climbexit", function(data)
+        return ClimbExit(data.x, data.y, getRectData(data), {
+            target = data.properties.target,
+            direction = data.properties.direction,
+            can_exit = data.properties.can_exit
+        })
+    end)
+
+    registry:register("climblanding", function(data) return ClimbLanding(data.x, data.y, getRectData(data)) end)
+    registry:register("climbarea", function(data) return ClimbArea(data.x, data.y, getRectData(data)) end)
+
+    registry:register("fallingclimbarea", function(data)
+        return FallingClimbArea(data.x, data.y, getRectData(data), {
+            dont_break = data.properties.dont_break,
+            breaks_on_leave = data.properties.breaks_on_leave,
+            fall_time = data.properties.fall_time,
+            timed = data.properties.timed,
+            no_unsafe_area = data.properties.no_unsafe_area
+        })
+    end)
+
+    registry:register("climbunsafe", function(data) return ClimbUnsafe(data.x, data.y, getRectData(data)) end)
+
+    registry:register("climbmover", function(data)
+        return ClimbMover(data.x, data.y, getRectData(data), {
+            target = data.properties.target,
+            exit = data.properties.exit,
+            start_exit = data.properties.start_exit,
+            one_way = data.properties.one_way
+        })
     end)
 end
 
@@ -352,7 +393,6 @@ function Game:save(x, y)
     data.default_equip_slots = self.default_equip_slots
     data.default_storage_slots = self.default_storage_slots
 
-    data.inventory = self.inventory:save()
     data.light_inventory = self.light_inventory:save()
     data.dark_inventory = self.dark_inventory:save()
 
@@ -408,8 +448,7 @@ function Game:load(data, index, fade)
 
     self.light = false
 
-    -- Used to carry the soul invulnerability frames between waves
-    self.old_soul_inv_timer = 0
+    self.inv_frames = 0
 
     -- BEGIN SAVE FILE VARIABLES --
 
@@ -491,9 +530,9 @@ function Game:load(data, index, fade)
     end
 
     self.default_storage_slots = data.default_storage_slots or 0
-    -- Check if a mod is still using the deprecated "enableStorage" config
+    -- Check if a project is still using the deprecated "enableStorage" config
     if Game:getConfig("enableStorage") ~= nil then
-        Kristal.Console:warn("Using deprecated mod option 'enableStorage', switch to 'storageSlots' option instead")
+        Kristal.Console:warn("Using deprecated project option 'enableStorage', switch to 'storageSlots' option instead")
         if Game:getConfig("enableStorage") or self.default_storage_slots > 0 then
             self.default_storage_slots = 24
         else
@@ -505,33 +544,63 @@ function Game:load(data, index, fade)
         end
     end
 
-    if self.light then
-        self.inventory = LightInventory()
-    else
-        self.inventory = DarkInventory()
+    self.light_inventory = LightInventory()
+    self.dark_inventory = DarkInventory()
+
+    if self.is_new_file then
+        -- Initialize inventories
+
+        local default_light = Kristal.getModOption("lightInventory")
+        local default_dark = Kristal.getModOption("darkInventory")
+
+        if Kristal.getModOption("inventory") ~= nil then
+            if self.light and default_light == nil then
+                Kristal.markDeprecated(1, "project option inventory", "custom", "replaced", "lightInventory")
+                default_light = Kristal.getModOption("inventory")
+            elseif not self.light and default_dark == nil then
+                Kristal.markDeprecated(1, "project option inventory", "custom", "replaced", "darkInventory")
+                default_dark = Kristal.getModOption("inventory")
+            end
+        end
+
+        default_light = default_light or {}
+        default_dark = default_dark or {}
+
+        -- Default key items to include cell phone in dark inventory
+        if default_dark["key_items"] == nil then
+            default_dark["key_items"] = { "cell_phone" }
+        end
+
+        for storage, items in pairs(default_light) do
+            for i, item in ipairs(items) do
+                self.light_inventory:setItem(storage, i, item)
+            end
+        end
+        for storage, items in pairs(default_dark) do
+            for i, item in ipairs(items) do
+                self.dark_inventory:setItem(storage, i, item)
+            end
+        end
     end
 
-    self.light_inventory = LightInventory()
-    if data.light_inventory then
+    if data.inventory ~= nil and self.light then
+        -- DEPRECATED in 0.11.0: If generic "inventory" data is saved and it is currently light, load it instead
+        self.light_inventory:load(data.inventory)
+    elseif data.light_inventory ~= nil then
         self.light_inventory:load(data.light_inventory)
     end
-    self.dark_inventory = DarkInventory()
-    if data.dark_inventory then
+
+    if data.inventory ~= nil and not self.light then
+        -- DEPRECATED in 0.11.0: If generic "inventory" data is saved and it is currently dark, load it instead
+        self.dark_inventory:load(data.inventory)
+    elseif data.dark_inventory ~= nil then
         self.dark_inventory:load(data.dark_inventory)
     end
 
-    if data.inventory then
-        self.inventory:load(data.inventory)
+    if self.light then
+        self.inventory = self.light_inventory
     else
-        local default_inv = Kristal.getModOption("inventory") or {}
-        if not self.light and not default_inv["key_items"] then
-            default_inv["key_items"] = { "cell_phone" }
-        end
-        for storage, items in pairs(default_inv) do
-            for i, item in ipairs(items) do
-                self.inventory:setItem(storage, i, item)
-            end
-        end
+        self.inventory = self.dark_inventory
     end
 
     local loaded_light = data.light or false
@@ -726,6 +795,12 @@ function Game:loadQuick(fade)
     self.quick_save = save
 end
 
+--- Creates the battle instance. You most likely do not need to call this directly.
+---@return Battle
+function Game:createBattle()
+    return Battle()
+end
+
 --- Starts a battle using the specified encounter file.
 ---@param encounter     Encounter|string    The encounter id or instance to use for this battle.
 ---@param transition?   boolean|string      Whether to start in the transition state (Defaults to `true`). As a string, represents the state to start the battle in.
@@ -746,7 +821,7 @@ function Game:encounter(encounter, transition, enemy, context)
 
     self.state = "BATTLE"
 
-    self.battle = Battle()
+    self.battle = self:createBattle()
 
     if context then
         self.battle.encounter_context = context
@@ -876,7 +951,7 @@ end
 ---@return Recruit[]
 function Game:getRecruits(include_incomplete, include_hidden)
     local recruits = {}
-    for id,recruit in pairs(Game.recruits_data) do
+    for id, recruit in pairs(Game.recruits_data) do
         if (not recruit:getHidden() or include_hidden) and (recruit:getRecruited() == true or include_incomplete and type(recruit:getRecruited()) == "number" and recruit:getRecruited() > 0) then
             table.insert(recruits, recruit)
         end
@@ -888,7 +963,7 @@ end
 ---@param recruit string
 ---@return boolean
 function Game:hasRecruit(recruit)
-    return self:getRecruit(recruit):getRecruited() == true
+    return self:getRecruit(recruit) and self:getRecruit(recruit):getRecruited() == true
 end
 
 ---@param chara     string|PartyMember
@@ -903,6 +978,7 @@ function Game:addPartyMember(chara, index)
     else
         table.insert(self.party, chara)
     end
+    self.world:spawnSoul()
     return chara
 end
 
@@ -913,10 +989,12 @@ function Game:removePartyMember(chara)
         chara = self:getPartyMember(chara)
     end
     TableUtils.removeValue(self.party, chara)
+    self.world:spawnSoul()
     return chara
 end
 
 ---@param ... string|PartyMember
+---@return PartyMember[]
 function Game:setPartyMembers(...)
     local args = {...}
     self.party = {}
@@ -927,6 +1005,8 @@ function Game:setPartyMembers(...)
             self.party[i] = chara
         end
     end
+    self.world:spawnSoul()
+    return self.party
 end
 
 ---@param chara string|PartyMember
@@ -1132,6 +1212,118 @@ function Game:isWorldHidden()
     return false
 end
 
+--- Gets whether the player is currently invulnerable to damage.
+---@return boolean invulnerable # Whether the player is currently invulnerable to damage.
+function Game:hasInvulnerability()
+    return self.inv_frames > -1
+end
+
+--- Resets the invulnerability timer to `-1`, making the player vulnerable to damage again.
+function Game:resetInvuln()
+    self.inv_frames = -1
+end
+
+--- Sets the number of frames the player is invulnerable to damage for.
+---
+--- The player will be invulnerable for as long as this number is **greater than** `-1`, causing one extra frame of invulnerability.
+--- If you would like to disable invulnerability, set this to `-1`.
+---@param frames number
+function Game:setInvulnFrames(frames)
+    self.inv_frames = frames
+end
+
+--- Gets the default number of frames the player should be invulnerable to damage for.
+---@return number frames # The default number of frames the player should be invulnerable to damage for.
+function Game:getDefaultInvulnFrames()
+    return Game:getConfig("defaultInvulnTime")
+end
+
+---@param inv_frames number
+---@return number
+function Game:applyInvulnBonuses(inv_frames)
+    return Game:callEquipmentBonusCalculations(
+        -- Current value, Base value
+        inv_frames, inv_frames,
+        -- Group calculation
+        function(item, current_frames, base_frames, num_equipped)
+            return item:calculateInvulnFrames(current_frames, base_frames, num_equipped)
+        end,
+        -- Priority getter
+        function(item)
+            return item:calculateInvulnFramesPriority()
+        end
+    )
+end
+
+--- Whether the invulnerability timer should decrease each frame.
+---
+--- This redirects to either [`Battle:shouldDecreaseInvuln()`](lua://Battle.shouldDecreaseInvuln) or [`World:shouldDecreaseInvuln()`](lua://World.shouldDecreaseInvuln),
+--- depending on the current state.
+---@return boolean? decrease_invuln # `true` if the invulnerability timer should decrease.
+function Game:shouldDecreaseInvuln()
+    if self.state == "BATTLE" and self.battle ~= nil then
+        return self.battle:shouldDecreaseInvuln()
+    elseif self.state == "OVERWORLD" and self.world ~= nil then
+        return self.world:shouldDecreaseInvuln()
+    end
+end
+
+--- Calculates a value based on the equipped items of all party members.
+---
+--- This function will search through the party members' equipped items, grouping items of the same ID and calling the `group_callback` function once
+--- for each unique equipped item, optionally sorted with a priority getter.
+---
+--- The `group_callback` function is given a reference to the first item of the group, the current value (which should be modified and returned),
+--- the base value before modification, and how many of that item are equipped across the party.
+---
+--- If a `priority_getter` function is provided, it will be called for each unique equipped item to determine the order in which they are processed.
+--- Items with lower priority values will be processed first.
+---
+--- If a `direct_callback` function is provided, it will be called for each individual equipped item before priority sorting. In the base engine, this is
+--- only used to temporarily support deprecated equipment callbacks.
+---@generic T
+---@param value T # The value which will be modified by the callback function for each equipped item.
+---@param base_value T # The base value which will be passed to the callback function for each equipped item.
+---@param group_callback fun(item: Item, value: T, base_value: T, num_equipped: integer): T # The callback function which will be called for each unique equipped item. It should return the modified value.
+---@param priority_getter? fun(item: Item): number # An optional function which will be called for each unique equipped item to determine the order in which they are processed. Items with lower priority values will be processed first.
+---@param direct_callback? fun(item: Item, value: T, base_value: T): T # An optional function which will be called for each individual equipped item, before priority sorting. It should return the modified value.
+---@return T # The final modified value after all equipped items have been processed.
+function Game:callEquipmentBonusCalculations(value, base_value, group_callback, priority_getter, direct_callback)
+    ---@type Item[]
+    local item_list = {}
+    ---@type table<string, number>
+    local num_equipped = {}
+
+    for _, party_member in ipairs(self.party) do
+        for _, item in ipairs(party_member:getEquipment()) do
+            local current_count = num_equipped[item.id]
+
+            if current_count == nil then
+                num_equipped[item.id] = 1
+                table.insert(item_list, item)
+            else
+                num_equipped[item.id] = current_count + 1
+            end
+
+            if direct_callback ~= nil then
+                value = direct_callback(item, value, base_value)
+            end
+        end
+    end
+
+    if priority_getter ~= nil then
+        table.sort(item_list, function(a, b)
+            return priority_getter(a) < priority_getter(b)
+        end)
+    end
+
+    for _, item in ipairs(item_list) do
+        value = group_callback(item, value, base_value, num_equipped[item.id])
+    end
+
+    return value
+end
+
 function Game:update()
     if self.state == "EXIT" then
         self.fader:update()
@@ -1165,6 +1357,10 @@ function Game:update()
 
     self.playtime = self.playtime + DT
 
+    if self:shouldDecreaseInvuln() then
+        self.inv_frames = self.inv_frames - DTMULT
+    end
+
     self.stage:update()
 
     Kristal.callEvent(KRISTAL_EVENT.postUpdate, DT)
@@ -1191,10 +1387,6 @@ function Game:onKeyPressed(key, is_repeat)
         if self.world then
             self.world:onKeyPressed(key)
         end
-    elseif self.state == "SHOP" then
-        if self.shop then
-            self.shop:onKeyPressed(key, is_repeat)
-        end
     elseif self.state == "GAMEOVER" then
         if self.gameover then
             self.gameover:onKeyPressed(key)
@@ -1213,6 +1405,25 @@ function Game:onWheelMoved(x, y)
     Kristal.callEvent(KRISTAL_EVENT.onWheelMoved, x, y)
 end
 
+--- Responsible for drawing the "Developer Mode Enabled" warning in the top right of the screen when developer mode is forcibly enabled.
+function Game:drawDevWarning()
+    if Kristal.shouldDisplayDevWarning() then
+        love.graphics.push()
+
+        local small_font = Assets.getFont("main", 16)
+        love.graphics.setFont(small_font)
+        local notice = "Developer Mode Enabled"
+        Draw.setColor(0, 0, 0, 1)
+        love.graphics.print(notice, SCREEN_WIDTH - small_font:getWidth(notice) - 5, 4)
+        love.graphics.print(notice, SCREEN_WIDTH - small_font:getWidth(notice) - 3, 4)
+        love.graphics.print(notice, SCREEN_WIDTH - small_font:getWidth(notice) - 4, 3)
+        love.graphics.print(notice, SCREEN_WIDTH - small_font:getWidth(notice) - 4, 5)
+        Draw.setColor(1, 1, 1, 0.75)
+        love.graphics.print(notice, SCREEN_WIDTH - small_font:getWidth(notice) - 4, 4)
+        love.graphics.pop()
+    end
+end
+
 function Game:draw()
     love.graphics.clear(0, 0, 0, 1)
     love.graphics.push()
@@ -1227,6 +1438,8 @@ function Game:draw()
     love.graphics.push()
     Kristal.callEvent(KRISTAL_EVENT.postDraw)
     love.graphics.pop()
+
+    self:drawDevWarning()
 end
 
 return Game

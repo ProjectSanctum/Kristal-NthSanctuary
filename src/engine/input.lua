@@ -44,6 +44,9 @@
 ---@field mouse_pressed table<number, Input.MouseData>
 ---@field mouse_released table<number, Input.MouseData>
 ---
+---@field private scroll_delta_x number
+---@field private scroll_delta_y number
+---
 ---@field order string[]
 ---
 ---@field required_binds table<string, boolean>
@@ -93,6 +96,9 @@ Input.mouse_button_max = 3
 Input.mouse_down = {}
 Input.mouse_pressed = {}
 Input.mouse_released = {}
+
+Input.scroll_delta_x = 0
+Input.scroll_delta_y = 0
 
 Input.order = {
     "down", "right", "up", "left", "confirm", "cancel", "menu", "console", "debug_menu", "object_selector",
@@ -557,6 +563,8 @@ function Input.clear(key, clear_down)
             end
         end
     else
+        self.scroll_delta_x = 0
+        self.scroll_delta_y = 0
         self.key_pressed = {}
         self.key_repeated = {}
         self.key_released = {}
@@ -735,6 +743,8 @@ end
 ---@param x number
 ---@param y number
 function Input.onWheelMoved(x, y)
+    self.scroll_delta_x = x
+    self.scroll_delta_y = y
     Kristal.onWheelMoved(x, y)
 end
 
@@ -1012,6 +1022,25 @@ function Input.is(alias, key)
     return false
 end
 
+--- Gets how much the user scrolled this frame.
+---@return number x
+---@return number y
+function Input.getScrollDelta()
+    return self.scroll_delta_x, self.scroll_delta_y
+end
+
+--- Gets how much the user scrolled this frame horizontally.
+---@return number x
+function Input.getScrollDeltaX()
+    return self.scroll_delta_x
+end
+
+--- Gets how much the user scrolled this frame vertically.
+---@return number y
+function Input.getScrollDeltaY()
+    return self.scroll_delta_y
+end
+
 ---@param alias string
 ---@param gamepad? boolean
 ---@return string
@@ -1044,19 +1073,50 @@ function Input.getTexture(alias, gamepad)
     return Assets.getTexture("kristal/buttons/unknown")
 end
 
+--- Returns the type of the current gamepad, or nil if none connected.
+---
+--- Defaults to "xbox" if no gamepad is connected, or if the type cannot be determined.
 ---@return "switch"|"ps4"|"xbox"?
 function Input.getControllerType()
-    if not Input.connected_gamepad then return nil end
+    local gamepad = Input.connected_gamepad
 
-    local name = Input.connected_gamepad:getName():lower()
+    if gamepad == nil then
+        return nil
+    end
 
-    local con = function(str) return StringUtils.contains(name, str) end
+    local major, _, _, _ = love.getVersion()
+
+    if major >= 12 then
+        -- Simple optimization for LÖVE 12+
+
+        ---@diagnostic disable-next-line: undefined-field
+        local type = gamepad:getGamepadType()
+
+        if type == "switchpro" or type == "joyconleft" or type == "joyconright" or type == "joyconpair" then
+            return "switch"
+        end
+
+        if type == "ps3" or type == "ps4" or type == "ps5" then
+            return "ps4"
+        end
+
+        return "xbox" -- unknown, xbox360, xboxone, amazonluna, stadia, virtual, shield
+    end
+
+    -- We're on 11.5 unfortunately... gotta do it the hard way
+
+    local name = gamepad:getName():lower()
+
+    local con = function(str) return string.find(name, str, 1) ~= nil end
+
     if con("nintendo") or con("switch") or con("joy-con") or con("wii") or con("gamecube") or con("nso") or con("nes") then
         return "switch"
     end
+
     if con("sony") or con("playstation") or con("%f[%a]ps") or con("dualshock") or con("dualsense") or con("dualforce") then
         return "ps4"
     end
+
     return "xbox"
 end
 

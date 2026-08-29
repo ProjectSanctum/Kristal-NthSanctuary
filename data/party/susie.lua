@@ -16,8 +16,10 @@ function character:init()
     -- Default title / class (saved to the save file)
     if Game.chapter <= 3 then
         self.title = "Dark Knight\nDoes damage using\ndark energy."
-    else
+    elseif Game.chapter == 4 then
         self.title = "Dark Hero\nCarries out fate\nwith the blade."
+    elseif Game.chapter >= 5 then
+        self.title = "Violent Violet\nFor that special\nsomeone."
     end
 
     -- Determines which character the soul comes from (higher number = higher priority)
@@ -36,8 +38,17 @@ function character:init()
 
     -- Spells
     self:addSpell("rude_buster")
-    if Game.chapter >= 2 then
+    if Game.chapter == 2 then
         self:addSpell("ultimate_heal")
+    elseif Game.chapter == 3 then
+        self:addSpell("ultra_heal")
+    elseif Game.chapter == 4 then
+        self:addSpell("ok_heal")
+    elseif Game.chapter >= 5 then
+        -- DIFFERENCE: In DELTARUNE, starting from a new file in Chapter 5 doesn't properly give you BetterHeal.
+        -- It's probably best that's the exception, not the rule...
+        self:addSpell("better_heal")
+        self:addSpell("scythemare")
     end
 
     -- Current health (saved to the save file)
@@ -47,8 +58,10 @@ function character:init()
         self.health = 140
     elseif Game.chapter == 3 then
         self.health = 190
-    else
+    elseif Game.chapter == 4 then
         self.health = 230
+    elseif Game.chapter >= 5 then
+        self.health = 290
     end
 
     -- Base stats (saved to the save file)
@@ -73,9 +86,16 @@ function character:init()
             defense = 2,
             magic = 2
         }
-    else
+    elseif Game.chapter == 4 then
         self.stats = {
             health = 230,
+            attack = 22,
+            defense = 2,
+            magic = 3
+        }
+    elseif Game.chapter >= 5 then
+        self.stats = {
+            health = 290,
             attack = 22,
             defense = 2,
             magic = 3
@@ -92,14 +112,24 @@ function character:init()
         }
     elseif Game.chapter == 3 then
         self.max_stats = {
-            health = 240
+            health = 240,
+            attack = 20,
+            magic = 4
         }
-    else
+    elseif Game.chapter == 4 then
         self.max_stats = {
-            health = 290
+            health = 290,
+            attack = 24,
+            magic = 5
+        }
+    elseif Game.chapter >= 5 then
+        self.max_stats = {
+            health = 340,
+            attack = 24,
+            magic = 5
         }
     end
-    
+
     -- Party members which will also get stronger when this character gets stronger, even if they're not in the party
     self.stronger_absent = {"kris","susie","ralsei"}
 
@@ -165,6 +195,7 @@ function character:init()
     -- Character flags (saved to the save file)
     self.flags = {
         ["auto_attack"] = false,
+        ["can_wear_ribbons"] = false
     }
 end
 
@@ -237,23 +268,31 @@ function character:drawPowerStat(index, x, y, menu)
         Draw.draw(icon, x-26, y+6, 0, 2, 2)
         love.graphics.print("Rudeness", x, y)
         if Game.chapter == 1 then
-            love.graphics.print("99", x+130, y)
-        else
+            local rudeness = 99
+            if self:getFlag("auto_attack", false) then
+                rudeness = rudeness + 1
+            end
+            love.graphics.print(rudeness, x+130, y)
+        elseif Game.chapter == 2 then
             love.graphics.print("89", x+130, y)
+        else
+            love.graphics.print("100", x+130, y)
         end
         return true
     elseif index == 2 then
-        if Game.chapter >= 3 then
-            return
+        if Game.chapter < 3 then
+            local icon = Assets.getTexture("ui/menu/icon/demon")
+            Draw.draw(icon, x-26, y+6, 0, 2, 2)
         end
-        local icon = Assets.getTexture("ui/menu/icon/demon")
-        Draw.draw(icon, x-26, y+6, 0, 2, 2)
         if Game.chapter == 1 then
             love.graphics.print("Crudeness", x, y, 0, 0.8, 1)
             love.graphics.print("100", x+130, y)
         elseif Game.chapter == 2 then
             love.graphics.print("Purple", x, y, 0, 0.8, 1)
             love.graphics.print("Yes", x+130, y)
+        elseif Game.chapter >= 4 then
+            love.graphics.print("* Healing", x-24, y)
+            love.graphics.print(15 + (self:getFlag("healing_used", 0)), x+130, y)
         end
         return true
     elseif index == 3 then

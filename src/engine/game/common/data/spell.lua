@@ -55,6 +55,14 @@ function Spell:getBattleDescription() return self.effect end
 ---@param chara PartyMember The `PartyMember` that is casting the spell
 ---@return number
 function Spell:getTPCost(chara) return self.cost end
+
+--- Gets the displayed TP cost of this spell.
+---@param chara PartyMember The `PartyMember` who has this spell
+---@return string
+function Spell:getPowerMenuTPDisplay(chara)
+    return tostring(self:getTPCost(chara)) .. "%"
+end
+
 --- *(Override)* Gets whether the spell is currently castable
 ---@param chara PartyMember The `PartyMember` the check is being run for
 ---@return boolean
@@ -91,13 +99,13 @@ function Spell:getCastMessage(user, target)
 end
 
 --- *(Override)* Gets the animation that is set when this spell is cast in battle
---- @return string
+---@return string
 function Spell:getCastAnimation()
     return self.cast_anim or "battle/spell"
 end
 
 --- *(Override)* Gets the animation that is set when this spell is selected in battle
---- @return string
+---@return string
 function Spell:getSelectAnimation()
     return self.select_anim or "battle/spell_ready"
 end
@@ -106,7 +114,7 @@ end
 --- The code for the effects of the spell (such as damage or healing) should go into this function
 ---@param user PartyBattler
 ---@param target Battler[]|EnemyBattler|PartyBattler|EnemyBattler[]|PartyBattler[]
----@return boolean? finish_action   Whether the spell action finishes automatically, when `false` the action can be manually ended with `Game.battle:finishActionBy(user)` (defaults to `true`) 
+---@return boolean? finish_action   Whether the spell action finishes automatically, when `false` the action can be manually ended with `Game.battle:finishActionBy(user)` (defaults to `true`)
 function Spell:onCast(user, target)
     -- Returning false here allows you to call 'Game.battle:finishActionBy(user)' yourself
 end

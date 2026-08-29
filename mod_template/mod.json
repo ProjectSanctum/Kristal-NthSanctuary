@@ -23,7 +23,7 @@
     "party": ["kris", "susie", "ralsei"],
 
     // The inventory. Contains three darkburgers, a cell phone and a shadow crystal by default.
-    "inventory": {
+    "darkInventory": {
         "items": ["glowshard", "darkburger", "darkburger", "darkburger"],
         "key_items": ["cell_phone", "shadowcrystal"]
     },
@@ -63,5 +63,8 @@
         "kristal": {
 {config}
         }
-    }
+    },
+
+    // Whether or not to enable dev mode. Dev mode enables debug keys and the console.
+    "dev": true
 }

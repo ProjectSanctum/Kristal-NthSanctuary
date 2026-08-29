@@ -22,9 +22,11 @@ function love.conf(t)
     t.window.height = 480
 
     if major >= 12 then
+        t.version = "12.0"
         t.highdpi = true
         t.usedpiscale = false
     else
+        t.version = "11.5"
         t.window.highdpi = true
         t.window.usedpiscale = false
     end

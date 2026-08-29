@@ -123,7 +123,7 @@ function PartyMember:init()
     }
     -- Max stats from level-ups
     self.max_stats = {}
-    
+
     -- Party members which will also get stronger when this character gets stronger, even if they're not in the party
     self.stronger_absent = {}
 
@@ -352,6 +352,23 @@ function PartyMember:getAttackSprite() return self.attack_sprite end
 function PartyMember:getAttackSound() return self.attack_sound end
 function PartyMember:getAttackPitch() return self.attack_pitch end
 
+--- *(Override)* Gets the size of the critical hit box when this party member is attacking in battle.
+---
+--- The size is both visual and equivalent to the frame leniency of the attack (at 30fps). The default is `1`, meaning you only have 1 frame to crit.
+---
+--- By default, this redirects to `Item:getAttackCritBoxSize` for the equipped weapon (if any).
+---@param battler PartyBattler # The attacker's battler.
+---@return number size # The size of the critical hit box.
+function PartyMember:getAttackCritBoxSize(battler)
+    local weapon = self:getWeapon()
+
+    if weapon ~= nil then
+        return weapon:getAttackCritBoxSize(battler)
+    end
+
+    return 1
+end
+
 ---@return number x
 ---@return number y
 function PartyMember:getBattleOffset()
@@ -399,6 +416,10 @@ end
 --- Sets this party member's health value
 ---@param health number
 function PartyMember:setHealth(health)
+    if INVINCIBILITY and health < self:getHealth() then
+        return
+    end
+
     if Game:isLight() then
         self.lw_health = health
     else
@@ -521,6 +542,16 @@ function PartyMember:addSpell(spell)
         spell = Registry.createSpell(spell)
     end
     table.insert(self.spells, spell)
+end
+
+--- Inserts a spell to this party member's set of available spells at `index` position
+---@param index number
+---@param spell string|Spell
+function PartyMember:insertSpell(index, spell)
+    if type(spell) == "string" then
+        spell = Registry.createSpell(spell)
+    end
+    table.insert(self.spells, index, spell)
 end
 
 --- Removes a spell from this party member's available spells
@@ -654,7 +685,7 @@ end
 function PartyMember:getEquipmentBonus(stat)
     local total = 0
     for _, item in ipairs(self:getEquipment()) do
-        total = total + item:getStatBonus(stat)
+        total = total + item:getStatBonus(stat, self)
     end
     return total
 end
@@ -663,7 +694,7 @@ end
 function PartyMember:getStats(light)
     local stats = TableUtils.copy(self:getBaseStats(light))
     for _, item in ipairs(self:getEquipment()) do
-        for stat, amount in pairs(item:getStatBonuses()) do
+        for stat, amount in pairs(item:getStatBonuses(self)) do
             if stats[stat] then
                 stats[stat] = stats[stat] + amount
             else
@@ -723,7 +754,7 @@ function PartyMember:convertToLight()
 
     if last_weapon then
         local result = last_weapon:convertToLightEquip(self)
-        if result then
+        if result ~= nil then
             if type(result) == "string" then
                 result = Registry.createItem(result)
             end
@@ -735,7 +766,7 @@ function PartyMember:convertToLight()
     for i = 1, 2 do
         if last_armors[i] then
             local result = last_armors[i]:convertToLightEquip(self)
-            if result then
+            if result ~= nil then
                 if type(result) == "string" then
                     result = Registry.createItem(result)
                 end
@@ -880,7 +911,7 @@ function PartyMember:loadEquipment(data)
     end
 end
 
----@return string[] spells An array of the spell IDs this party member knows 
+---@return string[] spells An array of the spell IDs this party member knows
 function PartyMember:saveSpells()
     local result = {}
     for _, v in pairs(self.spells) do
