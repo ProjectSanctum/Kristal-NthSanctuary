@@ -17,7 +17,7 @@ function MainMenuCredits:init(menu)
     self.menu = menu
 
     self.pages = {
-    self.pages = {        {
+		{
             "#th Sanctuary",
             {
                 { "Lead Developers", COLORS.yellow },
