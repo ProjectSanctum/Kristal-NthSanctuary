@@ -17,7 +17,90 @@ function MainMenuCredits:init(menu)
     self.menu = menu
 
     self.pages = {
+    self.pages = {        {
+            "#th Sanctuary",
+            {
+                { "Lead Developers", COLORS.yellow },
+                "Ralszor",
+                "DiamondDeltahedron",
+                "TheLucidLibrarian",
+                "Mason",
+                "Funkin's Garbage",
+                { "Storywriting", COLORS.yellow },
+                "KayCelestia",
+                "",
+                "",
+                "",
+            },
+            {
+                { "Contributors", COLORS.yellow },
+                "Hyperboid",
+                "JARU",
+                "Leaff",
+                "",
+                { "Music", COLORS.yellow },
+                "DeltaPulsar",
+                "squibles",
+            }
+        },
         {
+            "#th Sanctuary",
+            {
+                { "Spritework", COLORS.yellow },
+                "Runius",
+                "Hyperboid",
+                "Krisp / Tamato",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+            },
+            {
+                { "Borrowed Music", COLORS.yellow },
+                "obj_lily",
+                "therealaarami",
+                "AkitA",
+                "Rareblin",
+                "Lucas Pucas",
+                "",
+                "",
+                "",
+                "",
+            }
+        },
+        {
+            "#th Sanctuary",
+            {
+                { "Extra Assets", COLORS.yellow },
+                "DELTARUNE Team",
+                "Toby Fox",
+                "Temmie Chang",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+            },
+            {
+                { "Special Guests", {0.5, 1, 0.7} },
+                "AcousticJamm",
+                "RetroSpecter",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+            }
+        },
+		{
             "Kristal Engine",
             {
                 { "Lead Developers", COLORS.silver },

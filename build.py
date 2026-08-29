@@ -8,10 +8,9 @@ from pe_tools import parse_pe, IMAGE_DIRECTORY_ENTRY_RESOURCE
 from pe_tools.rsrc import parse_pe_resources, pe_resources_prepack, parse_prelink_resources, KnownResourceTypes
 from pe_tools.version_info import parse_version_info, VersionInfo
 
-ver_str = "0.1.0"
-windows_ver = "0, 1, 0, 0"
-file_description = "Leading Brand DELTARUNE-type Software"
-is_standalone = False # Set this to true if you are building Kristal as a standalone fangame
+ver_str = "0.4"
+windows_ver = "0, 4, 0, 0"
+file_description = "Deltarune B3313!"
 
 # Contains code from https://github.com/avast/pe_tools/blob/master/pe_tools/peresed.py
 
@@ -123,15 +122,7 @@ if args.kristal:
 
 print(f"Compiling Kristal...")
 
-print("Reading Kristal version...")
-try:
-    with open(os.path.join(kristal_path, "VERSION"), "r") as file:
-        ver_str = file.read()
-        windows_ver = Version(ver_str).format()
-except:
-    pass
-
-kristal_love_path = os.path.join(build_path, "lovepkg", "kristal.love")
+kristal_love_path = os.path.join(build_path, "lovepkg", "SURVEY_ALTERNATE.love")
 
 print("Copying engine files...")
 
@@ -144,10 +135,6 @@ ignorefiles = [
     "build",
     "output"
 ]
-
-# Ignore mods folder if not building as a standalone fangame
-if not is_standalone:
-    ignorefiles.append("mods")
 
 try:
     for file in os.listdir(kristal_path):
@@ -224,10 +211,10 @@ print("Patching in custom information...")
 setInfo("FileVersion", windows_ver)
 setInfo("ProductVersion", windows_ver)
 setInfo("FileDescription", file_description)
-setInfo("InternalName", "Kristal")
-setInfo("LegalCopyright", "Copyright © 2026 Kristal Team")
-setInfo("OriginalFilename", "kristal.exe")
-setInfo("ProductName", "Kristal")
+setInfo("InternalName", "#th Sanctuary")
+setInfo("LegalCopyright", "By Project Sanctum, Kristal © 2025 Kristal Team")
+setInfo("OriginalFilename", "SURVEY_ALTERNATE.exe")
+setInfo("ProductName", "#th Sanctuary")
 
 
 prepacked = pe_resources_prepack(resources)
@@ -236,7 +223,7 @@ pe.set_directory(IMAGE_DIRECTORY_ENTRY_RESOURCE, prepacked.pack(addr))
 
 print("Writing new file...")
 
-with open(os.path.join(build_path, "executable", "kristal.exe"), 'wb') as fout:
+with open(os.path.join(build_path, "executable", "SURVEY_ALTERNATE.exe"), 'wb') as fout:
     grope.dump(pe.to_blob(), fout)
 
 
@@ -270,13 +257,13 @@ for file in os.listdir(os.path.join(kristal_path, "lib")):
     shutil.copy(os.path.join(kristal_path, "lib", file), os.path.join(build_path, "lovepkg"))
 
 print("Zipping Kristal packages...")
-shutil.make_archive(os.path.join(output_path, "kristal-"+ver_str+"-love"), 'zip', os.path.join(build_path, "lovepkg"))
-shutil.make_archive(os.path.join(output_path, "kristal-"+ver_str+"-win"), 'zip', os.path.join(build_path, "executable"))
+shutil.make_archive(os.path.join(output_path, "nth-sanctuary-"+ver_str+"-love"), 'zip', os.path.join(build_path, "lovepkg"))
+shutil.make_archive(os.path.join(output_path, "nth-sanctuary-"+ver_str+"-win"), 'zip', os.path.join(build_path, "executable"))
 
 print("Packaging example project...")
 
 try:
-    os.makedirs(os.path.join(build_path, "example"))
+    os.makedirs(os.path.join(build_path, "nth-sanctuary"))
 except FileExistsError:
     pass
 
@@ -290,6 +277,7 @@ shutil.make_archive(os.path.join(output_path, "example-project"), 'zip', os.path
 
 print("Done!")
 print("Generated files:")
-print("> kristal-"+ver_str+"-love.zip")
-print("> kristal-"+ver_str+"-win.zip")
+
+print("> nth-sanctuary-"+ver_str+"-love.zip")
+print("> nth-sanctuary-"+ver_str+"-win.zip")
 print("> example-project.zip")
