@@ -17,18 +17,18 @@ function MainMenuCredits:init(menu)
     self.menu = menu
 
     self.pages = {
-		{
+        {
             "#th Sanctuary",
             {
                 { "Lead Developers", COLORS.yellow },
                 "Ralszor",
-                "DiamondDeltahedron",
-                "TheLucidLibrarian",
                 "Mason",
                 "Funkin's Garbage",
+                "",
+                "",
                 { "Storywriting", COLORS.yellow },
                 "KayCelestia",
-                "",
+                "TheLucidLibrarian",
                 "",
                 "",
             },
@@ -37,38 +37,39 @@ function MainMenuCredits:init(menu)
                 "Hyperboid",
                 "JARU",
                 "Leaff",
-                "",
-                { "Music", COLORS.yellow },
-                "DeltaPulsar",
-                "squibles",
+                "Duskl1ght \"Dusk\"",
+                "freezitsu",
+                "Runius",
+                "CharacturrDreemurr",
+                "Krisp / Tamato"
             }
         },
         {
             "#th Sanctuary",
             {
-                { "Spritework", COLORS.yellow },
-                "Runius",
-                "Hyperboid",
-                "Krisp / Tamato",
-                "",
-                "",
-                "",
-                "",
-                "",
-                "",
-                ""
-            },
-            {
-                { "Borrowed Music", COLORS.yellow },
+                { "Music", COLORS.yellow },
+                "DeltaPulsar",
+                "squibles",
+                "deepdarkdepths__",
                 "obj_lily",
                 "therealaarami",
                 "AkitA",
                 "Rareblin",
                 "Lucas Pucas",
                 "",
+            },
+            {
+                { "Contributors", COLORS.yellow },
+                "CuriousSpook",
+                "XoticKade",
+                "DiamondDeltahedron",
+                "Dev12",
                 "",
                 "",
                 "",
+                "",
+                "",
+                ""
             }
         },
         {
@@ -78,7 +79,7 @@ function MainMenuCredits:init(menu)
                 "DELTARUNE Team",
                 "Toby Fox",
                 "Temmie Chang",
-                "",
+                "duskkii",
                 "",
                 "",
                 "",
@@ -89,7 +90,7 @@ function MainMenuCredits:init(menu)
             {
                 { "Special Guests", {0.5, 1, 0.7} },
                 "AcousticJamm",
-                "RetroSpecter",
+                "",
                 "",
                 "",
                 "",
