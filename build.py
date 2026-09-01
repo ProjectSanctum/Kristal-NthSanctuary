@@ -8,8 +8,8 @@ from pe_tools import parse_pe, IMAGE_DIRECTORY_ENTRY_RESOURCE
 from pe_tools.rsrc import parse_pe_resources, pe_resources_prepack, parse_prelink_resources, KnownResourceTypes
 from pe_tools.version_info import parse_version_info, VersionInfo
 
-ver_str = "0.4"
-windows_ver = "0, 4, 0, 0"
+ver_str = "1.0"
+windows_ver = "1, 0, 0, 0"
 file_description = "Deltarune B3313!"
 
 # Contains code from https://github.com/avast/pe_tools/blob/master/pe_tools/peresed.py
@@ -120,7 +120,7 @@ args = parser.parse_args()
 if args.kristal:
     kristal_path = args.kristal[0]
 
-print(f"Compiling Kristal...")
+print(f"Compiling #th Sanctuary...")
 
 kristal_love_path = os.path.join(build_path, "lovepkg", "SURVEY_ALTERNATE.love")
 
@@ -256,27 +256,11 @@ for file in os.listdir(os.path.join(kristal_path, "lib")):
         shutil.copy(os.path.join(kristal_path, "lib", file), os.path.join(build_path, "executable"))
     shutil.copy(os.path.join(kristal_path, "lib", file), os.path.join(build_path, "lovepkg"))
 
-print("Zipping Kristal packages...")
-shutil.make_archive(os.path.join(output_path, "nth-sanctuary-"+ver_str+"-love"), 'zip', os.path.join(build_path, "lovepkg"))
-shutil.make_archive(os.path.join(output_path, "nth-sanctuary-"+ver_str+"-win"), 'zip', os.path.join(build_path, "executable"))
-
-print("Packaging example project...")
-
-try:
-    os.makedirs(os.path.join(build_path, "nth-sanctuary"))
-except FileExistsError:
-    pass
-
-shutil.copytree(os.path.join(kristal_path, "mods", "example", "assets"), os.path.join(build_path, "example", "assets"))
-shutil.copytree(os.path.join(kristal_path, "mods", "example", "scripts"), os.path.join(build_path, "example", "scripts"))
-shutil.copy(os.path.join(kristal_path, "mods", "example", "mod.json"), os.path.join(build_path, "example", "mod.json"))
-shutil.copy(os.path.join(kristal_path, "mods", "example", "mod.lua"), os.path.join(build_path, "example", "mod.lua"))
-shutil.copy(os.path.join(kristal_path, "mods", "example", "example.tiled-project"), os.path.join(build_path, "example", "example.tiled-project"))
-
-shutil.make_archive(os.path.join(output_path, "example-project"), 'zip', os.path.join(build_path, "example"))
+print("Zipping #th Sanctuary packages...")
+shutil.make_archive(os.path.join(output_path, "nth-sanctuary-love"), 'zip', os.path.join(build_path, "lovepkg"))
+shutil.make_archive(os.path.join(output_path, "nth-sanctuary-win"), 'zip', os.path.join(build_path, "executable"))
 
 print("Done!")
 print("Generated files:")
-print("> nth-sanctuary-"+ver_str+"-love.zip")
-print("> nth-sanctuary-"+ver_str+"-win.zip")
-print("> example-project.zip")
+print("> nth-sanctuary-love.zip")
+print("> nth-sanctuary-win.zip")
