@@ -2,7 +2,7 @@
 ---@overload fun(...) : FileButton
 local FileButton, super = Class(Object)
 
-function FileButton:init(list, id, data, x, y, width, height)
+function FileButton:init(list, id, data, x, y, width, height, mod)
     super.init(self, x, y, width, height)
 
     self.list = list
@@ -23,12 +23,34 @@ function FileButton:init(list, id, data, x, y, width, height)
     self.shard_icon = Assets.getTexture("ui/menu/icon/shard")
 end
 
+---@return int
+function FileButton:getDarkShardCount(dark_shard_bits)
+    dark_shard_bits = dark_shard_bits or self.dark_shards
+    local count = 0 -- (Because of the starting dark shard)
+    for id = 0, #dark_shard_bits * 32 do
+        local word = bit.rshift(id, 5) + 1
+        local subid = bit.band(id, 0b00011111)
+        if bit.band(dark_shard_bits[word] or 0, bit.lshift(1, subid)) ~= 0 then
+            count = count + 1
+        end
+    end
+    return count
+end
+
 function FileButton:setData(data)
     self.data = data
 
     self.name = data and data.name or "[EMPTY]"
     self.area = data and data.room_name or "------------"
-	self.shards = data and data.flags["shards"] or 0
+    self.shards = 0
+    if not data then
+        -- Do nothing
+    elseif data.dark_shards then
+        self.shards = self:getDarkShardCount(data.dark_shards)
+    -- Display legacy shards counter
+    elseif data.flags["shards"] then
+        self.shards = data.flags["shards"]
+    end
 	
     if data and data.playtime then
         local hours = math.floor(data.playtime / 3600)
