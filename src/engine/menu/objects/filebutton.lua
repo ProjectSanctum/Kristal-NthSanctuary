@@ -2,7 +2,7 @@
 ---@overload fun(...) : FileButton
 local FileButton, super = Class(Object)
 
-function FileButton:init(list, id, data, x, y, width, height, mod)
+function FileButton:init(list, id, data, x, y, width, height)
     super.init(self, x, y, width, height)
 
     self.list = list
